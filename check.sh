@@ -9,7 +9,7 @@
 #   HE_COURSE_DIR   where the course repositories are (default: ~/course)
 #
 # It changes nothing on the machine. It reads versions, the two course
-# repositories and the Maven cache, and makes one HTTPS request to each
+# repositories and Tollgate's build output, and makes one HTTPS request to each
 # download site. It never prints keys, tokens or environment variables.
 #
 # Exit status: 0 when nothing failed, 1 when at least one check failed.
@@ -225,21 +225,16 @@ fi
 
 # --- Tollgate build ----------------------------------------------------------
 
-# ./mvnw -B verify downloads Maven itself, Spring Boot and the embedded
-# PostgreSQL binaries into ~/.m2. Their presence shows the build has run.
-m2="$HOME/.m2"
-missing=""
-ls -d "$m2"/wrapper/dists/apache-maven-3.8.6* >/dev/null 2>&1 || missing="${missing} Maven 3.8.6,"
-[ -d "$m2/repository/org/springframework/boot/spring-boot/2.7.18" ] || missing="${missing} Spring Boot 2.7.18,"
-[ -d "$m2/repository/io/zonky/test" ] || missing="${missing} embedded PostgreSQL,"
-if [ -z "$missing" ]; then
-  if ls "$COURSE_DIR"/tollgate/*/target/surefire-reports/*.txt >/dev/null 2>&1; then
-    result PASS build "Tollgate's dependencies are downloaded and its tests have run"
-  else
-    result WARN build "dependencies are downloaded, but no test reports found. Run: cd $COURSE_DIR/tollgate && ./mvnw -B verify"
-  fi
+# Step 5 (./mvnw -B -DskipTests verify) compiles the application and its
+# tests into target/. Both folders show the build ran in this clone; files in
+# ~/.m2 alone could come from other projects.
+tg="$COURSE_DIR/tollgate"
+if [ ! -d "$tg" ]; then
+  result FAIL build "Tollgate isn't cloned yet, so it can't have been built (steps 4 and 5)"
+elif [ -d "$tg/tollgate-app/target/classes" ] && [ -d "$tg/tollgate-app/target/test-classes" ]; then
+  result PASS build "Tollgate compiled"
 else
-  result FAIL build "not yet run (missing:${missing%,}). Run: cd $COURSE_DIR/tollgate && ./mvnw -B verify"
+  result FAIL build "not built yet. Run: cd $tg && ./mvnw -B -DskipTests verify"
 fi
 
 # --- Network -----------------------------------------------------------------

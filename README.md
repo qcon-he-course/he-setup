@@ -93,10 +93,10 @@ git clone https://github.com/qcon-he-course/he-petclinic.git ~/course/petclinic
 
 ```bash
 cd ~/course/tollgate
-./mvnw -B verify
+./mvnw -B -DskipTests verify
 ```
 
-This downloads Maven, the project's dependencies and an embedded PostgreSQL, then runs the tests. It should end with `BUILD SUCCESS`. Doing it now means the first exercise in class doesn't wait on downloads.
+This downloads Maven and the project's dependencies, then compiles the code. It should end with `BUILD SUCCESS`. Doing it now means the first exercise in class doesn't wait on downloads. The tests are skipped here; they take several minutes, and they come later in the course.
 
 ## 6. Don't open the course repositories in a coding agent yet
 
@@ -110,7 +110,7 @@ bash ~/course/he-setup/check.sh
 
 It prints one line per check, then a summary block. Paste the summary block into the Slack thread.
 
-The check changes nothing on your machine. It reads tool versions, the two repositories and your Maven cache, and makes one request to each download site the course uses. It doesn't print keys, tokens or environment variables, and it shows your home folder as `~`. It can't tell whether your agent is signed in, so make sure you completed step 3.
+The check changes nothing on your machine. It reads tool versions, the two repositories and Tollgate's build output, and makes one request to each download site the course uses. It doesn't print keys, tokens or environment variables, and it shows your home folder as `~`. It can't tell whether your agent is signed in, so make sure you completed step 3.
 
 ## If a check fails
 
