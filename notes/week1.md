@@ -121,14 +121,14 @@ Loading a tool isn't enough. Say which kind of question goes to it. This is the 
 
 A generated context file (`/init`) mostly repeats the README, and you pay for it on every request. In ETH Zurich's study,<sup>[5](#src-5)</sup> generated files solved slightly fewer tasks and cost 20 to 23% more. Audit a draft line by line, and keep a line only if it passes three tests:
 
-1. **It's verified,** and says where: a file and line, or a tool result.
+1. **It's verified,** and says where to look: the file, and the class or method. Open the file and line to check it. Write down the symbol: line numbers change with the next commit, and a stale one sends the agent to the wrong place.
 2. **Without it, the agent would get it wrong, or need a long time to find it.**
 3. **The README doesn't already say it.**
 
 | Leave out                                                                                                        | Keep                                                                                                                                                                        |
 |------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| "Follows Spring best practices with a clean layered architecture." Generic, and wrong: there's no service layer. | "Pet validation is in `PetValidator`, not in annotations: name required, at most 30 characters; birth date required; type required for new pets." `PetValidator.java:36-57` |
-| "Uses Java and Spring Boot." True, and found in seconds.                                                         | "`/oups` throws on purpose, to demonstrate the error page." `CrashController.java:31-34`                                                                                    |
+| "Follows Spring best practices with a clean layered architecture." Generic, and wrong: there's no service layer. | "Pet validation is in `PetValidator`, not in annotations: name required, at most 30 characters; birth date required; type required for new pets." `PetValidator.validate`   |
+| "Uses Java and Spring Boot." True, and found in seconds.                                                         | "`/oups` throws on purpose, to demonstrate the error page." `CrashController.triggerException`                                                                                    |
 
 Also keep these lines:
 
@@ -138,7 +138,7 @@ Also keep these lines:
 
 Leave out anything you tagged inferred and didn't check.
 
-**As it grows, make it an index.** Put one topic in each file. In AGENTS.md, name each file and the area it covers, for example "Before changing assessment rules, read `docs/agents/assessment.md`". The agent reads a topic file when its task touches that area. This works in every agent, and each file stays short enough to review. Claude Code's documentation suggests staying under 200 lines per file.<sup>[10](#src-10)</sup> In Claude Code, an `@path` import loads the file into every session, so it saves no context; a path in backticks is only a pointer.
+**As it grows, make it an index.** Put one topic in each file. In AGENTS.md, name each file and the area it covers, for example "Before changing assessment rules, read `docs/agents/assessment.md`". Write each pointer as an instruction with a trigger, the way a skill's description says when to use it. The agent then reads the topic file when its task matches. This works in every agent, and each file stays short enough to review. Claude Code's documentation suggests staying under 200 lines per file.<sup>[10](#src-10)</sup> In Claude Code, an `@path` import loads the file into every session, so it saves no context; a path in backticks is only a pointer.
 
 ### Which file does your agent read?
 
