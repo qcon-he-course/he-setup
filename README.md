@@ -116,13 +116,13 @@ The check changes nothing on your machine. It reads tool versions, the two repos
 
 Post the summary and the error in the thread, and we'll help. The most common causes:
 
-| Check | Likely cause | What to do |
-|---|---|---|
-| `java` warns about a newer version | 17 is installed but isn't the default | Step 2, last paragraph |
-| `java` fails | No JDK, or on macOS the system stub without a JDK | Step 2 |
-| `build` fails | Step 5 hasn't run, or it stopped with an error | Run step 5 and post the last lines of its output |
-| `maven-central` or `pypi` fails | A company proxy or firewall | Try another network, or ask your IT team about a proxy for Maven |
-| `platform` fails on WSL 1 | The distribution runs on WSL 1 | In PowerShell: `wsl --set-version Ubuntu 2` |
+| Check                              | Likely cause                                      | What to do                                                       |
+|------------------------------------|---------------------------------------------------|------------------------------------------------------------------|
+| `java` warns about a newer version | 17 is installed but isn't the default             | Step 2, last paragraph                                           |
+| `java` fails                       | No JDK, or on macOS the system stub without a JDK | Step 2                                                           |
+| `build` fails                      | Step 5 hasn't run, or it stopped with an error    | Run step 5 and post the last lines of its output                 |
+| `maven-central` or `pypi` fails    | A company proxy or firewall                       | Try another network, or ask your IT team about a proxy for Maven |
+| `platform` fails on WSL 1          | The distribution runs on WSL 1                    | In PowerShell: `wsl --set-version Ubuntu 2`                      |
 
 If something can't be fixed before the session, come anyway. You can follow the hands-on parts by watching.
 
