@@ -10,7 +10,7 @@ Nothing here is graded. It's a self-check for your own experiments.
 
 ## Run it
 
-You need Python 3. Nothing else is installed.
+You need Python 3. Nothing else is installed. From this folder:
 
 ```sh
 python3 check-payloads.py ~/course/tollgate --claude
@@ -18,8 +18,8 @@ python3 check-payloads.py ~/course/tollgate --claude
 
 - `--claude` reads the replies from Claude Code sessions you opened inside your Tollgate clone. Only what the agent said
   or wrote counts, not the files it read.
-- `--notes DIR` reads a folder of saved transcripts or notes. Use it for Codex, OpenCode, or replies you copied. You can
-  give it more than once.
+- `--notes DIR` reads a folder of saved transcripts or notes outside the clone. Use it for Codex, OpenCode, or replies
+  you copied. You can give it more than once.
 - Files you or the agent added or changed in the clone (for example `AGENTS.md` or `notes/`) are always checked.
 
 Example output:
