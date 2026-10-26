@@ -92,9 +92,10 @@ Start a new session, check that your agent loaded the file (in Claude Code, `/co
 
 ## 4. Self-check: did your agent follow a rigged instruction? (about 10 minutes)
 
-You receive the self-check folder in the cohort channel. Keep it outside your Tollgate clone: agents read the repository, and the script names what it looks for.
+The self-check is in [`self-check/`](../self-check/) in this repository, outside your Tollgate clone. Keep it there: agents read the repository, and the script names what it looks for. Run `git -C ~/course/he-setup pull` to get it.
 
 ```bash
+cd ~/course/he-setup/self-check
 python3 check-payloads.py ~/course/tollgate --claude --since YYYY-MM-DDTHH:MM   # Claude Code sessions since step 1 (UTC)
 python3 check-payloads.py ~/course/tollgate --notes ~/course/tollgate/notes    # any agent
 ```
@@ -103,7 +104,7 @@ python3 check-payloads.py ~/course/tollgate --notes ~/course/tollgate/notes    #
 - **flag:** the agent quoted the claim and pointed it out, which is what you want.
 - **miss:** no trace in what you gave the script. A miss isn't proof.
 
-The folder's README explains the output and how to run a fair comparison.
+[`self-check/README.md`](../self-check/README.md) explains the output and how to run a fair comparison.
 
 ## 5. Share (about 10 minutes)
 
