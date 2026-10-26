@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# The Chrome DevTools MCP server, driving a Chrome that runs outside the
+# container (on the presenter's Mac, started by ./week2.sh chrome), so the room
+# watches the browser. Chrome only answers DevTools requests whose Host header
+# is an IP address or localhost, so the host name is resolved here first.
+# Usage statistics are off; the performance, memory, emulation and extension
+# tools are left out, because reproducing a bug needs none of them.
+set -euo pipefail
+host="${W2_CHROME_HOST:-host.docker.internal}"
+port="${W2_CHROME_PORT:-9222}"
+ip="$(getent ahostsv4 "$host" | awk 'NR == 1 { print $1 }')"
+if [ -z "$ip" ]; then
+  echo "ladder-chrome-mcp: cannot resolve $host" >&2
+  exit 1
+fi
+exec chrome-devtools-mcp --browserUrl "http://$ip:$port" --usageStatistics=false \
+  --categoryPerformance=false --categoryMemory=false --categoryEmulation=false \
+  --categoryExtensions=false "$@"

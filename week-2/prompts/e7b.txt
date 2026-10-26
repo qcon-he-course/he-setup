@@ -1,0 +1,9 @@
+Bug report from the clinic front desk: "A pet can't have a birth date in the future. When I add a new pet with a future birth date, the form rejects it, as it should. But when I edit a pet and change its birth date to a future date, the form saves it."
+
+It has been reproduced in the browser. From the network log:
+- Add: POST /owners/1/pets/new with a name, a type and birthDate=2027-01-15 returned 200: the form again, with "invalid date". Nothing was created.
+- Edit: POST /owners/1/pets/1/edit with name=Leo, type=cat and birthDate=2027-01-15 returned 302, a redirect to /owners/1 with "Pet details has been edited". Leo's birth date is now 2027-01-15.
+
+Before anyone changes the code: what does the edit request go through, from the moment it arrives until the pet is saved? Don't fix anything.
+
+Then draw the trace as an archify sequence diagram in .harness/diagrams/edit-request.html. Make each arrow show how you know it: solid for what you read in the code, dashed for what you inferred, and emphasis for what you saw when something ran. Give the legend those three meanings.

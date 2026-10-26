@@ -1,0 +1,83 @@
+diff --git a/src/main/java/org/springframework/samples/petclinic/owner/PetController.java b/src/main/java/org/springframework/samples/petclinic/owner/PetController.java
+index 255b595..04d0b1a 100644
+--- a/src/main/java/org/springframework/samples/petclinic/owner/PetController.java
++++ b/src/main/java/org/springframework/samples/petclinic/owner/PetController.java
+@@ -15,7 +15,6 @@
+  */
+ package org.springframework.samples.petclinic.owner;
+ 
+-import java.time.LocalDate;
+ import java.util.Collection;
+ import java.util.Objects;
+ import java.util.Optional;
+@@ -112,11 +111,6 @@ class PetController {
+ 			result.rejectValue("name", "duplicate", "already exists");
+ 		}
+ 
+-		LocalDate currentDate = LocalDate.now();
+-		if (pet.getBirthDate() != null && pet.getBirthDate().isAfter(currentDate)) {
+-			result.rejectValue("birthDate", "typeMismatch.birthDate");
+-		}
+-
+ 		if (result.hasErrors()) {
+ 			return VIEWS_PETS_CREATE_OR_UPDATE_FORM;
+ 		}
+diff --git a/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java b/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
+index db847c8..cd0c807 100644
+--- a/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
++++ b/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
+@@ -15,6 +15,8 @@
+  */
+ package org.springframework.samples.petclinic.owner;
+ 
++import java.time.LocalDate;
++
+ import org.springframework.util.StringUtils;
+ import org.springframework.validation.Errors;
+ import org.springframework.validation.Validator;
+@@ -56,6 +58,9 @@ public class PetValidator implements Validator {
+ 		if (pet.getBirthDate() == null) {
+ 			errors.rejectValue("birthDate", REQUIRED, REQUIRED);
+ 		}
++		else if (pet.getBirthDate().isAfter(LocalDate.now())) {
++			errors.rejectValue("birthDate", "typeMismatch.birthDate");
++		}
+ 	}
+ 
+ 	/**
+diff --git a/src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java b/src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java
+index b45ffd4..7e6107f 100644
+--- a/src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java
++++ b/src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java
+@@ -241,6 +241,20 @@ class PetControllerTests {
+ 				.andExpect(view().name("pets/createOrUpdatePetForm"));
+ 		}
+ 
++		@Test
++		void processUpdateFormWithFutureBirthDateShowsFormAgain() throws Exception {
++			String futureBirthDate = LocalDate.now().plusMonths(1).toString();
++
++			mockMvc
++				.perform(post("/owners/{ownerId}/pets/{petId}/edit", TEST_OWNER_ID, TEST_PET_ID).param("name", "Betty")
++					.param("type", "hamster")
++					.param("birthDate", futureBirthDate))
++				.andExpect(view().name("pets/createOrUpdatePetForm"))
++				.andExpect(status().isOk())
++				.andExpect(model().attributeHasNoErrors("owner"))
++				.andExpect(model().attributeHasFieldErrorCode("pet", "birthDate", "typeMismatch.birthDate"));
++		}
++
+ 		@Test
+ 		void processUpdateFormWithBlankName() throws Exception {
+ 			mockMvc
+diff --git a/src/test/resources/archunit_store/1cbfc1d1-c4c3-4fdb-b562-260ce0bb3bc5 b/src/test/resources/archunit_store/1cbfc1d1-c4c3-4fdb-b562-260ce0bb3bc5
+index c2fe58a..8d9de0d 100644
+--- a/src/test/resources/archunit_store/1cbfc1d1-c4c3-4fdb-b562-260ce0bb3bc5
++++ b/src/test/resources/archunit_store/1cbfc1d1-c4c3-4fdb-b562-260ce0bb3bc5
+@@ -1,6 +1,5 @@
+ Method <org.springframework.samples.petclinic.owner.OwnerController.processFindForm(int, org.springframework.samples.petclinic.owner.Owner, org.springframework.validation.BindingResult, org.springframework.ui.Model, org.springframework.web.servlet.mvc.support.RedirectAttributes)> calls method <org.springframework.validation.BindingResult.rejectValue(java.lang.String, java.lang.String, java.lang.String)> in (OwnerController.java:118)
+ Method <org.springframework.samples.petclinic.owner.OwnerController.processUpdateOwnerForm(org.springframework.samples.petclinic.owner.Owner, org.springframework.validation.BindingResult, int, org.springframework.web.servlet.mvc.support.RedirectAttributes)> calls method <org.springframework.validation.BindingResult.rejectValue(java.lang.String, java.lang.String, java.lang.String)> in (OwnerController.java:162)
+-Method <org.springframework.samples.petclinic.owner.PetController.processCreationForm(org.springframework.samples.petclinic.owner.Owner, org.springframework.samples.petclinic.owner.Pet, org.springframework.validation.BindingResult, org.springframework.web.servlet.mvc.support.RedirectAttributes)> calls method <org.springframework.validation.BindingResult.rejectValue(java.lang.String, java.lang.String)> in (PetController.java:117)
+ Method <org.springframework.samples.petclinic.owner.PetController.processCreationForm(org.springframework.samples.petclinic.owner.Owner, org.springframework.samples.petclinic.owner.Pet, org.springframework.validation.BindingResult, org.springframework.web.servlet.mvc.support.RedirectAttributes)> calls method <org.springframework.validation.BindingResult.rejectValue(java.lang.String, java.lang.String, java.lang.String)> in (PetController.java:112)
+ Method <org.springframework.samples.petclinic.owner.PetController.processCreationForm(org.springframework.samples.petclinic.owner.Owner, org.springframework.samples.petclinic.owner.Pet, org.springframework.validation.BindingResult, org.springframework.web.servlet.mvc.support.RedirectAttributes)> calls method <org.springframework.validation.BindingResult.rejectValue(java.lang.String, java.lang.String, java.lang.String)> in (PetController.java:132)
+ Method <org.springframework.samples.petclinic.owner.PetController.processUpdateForm(org.springframework.samples.petclinic.owner.Owner, org.springframework.samples.petclinic.owner.Pet, org.springframework.validation.BindingResult, org.springframework.web.servlet.mvc.support.RedirectAttributes)> calls method <org.springframework.validation.BindingResult.rejectValue(java.lang.String, java.lang.String, java.lang.String)> in (PetController.java:149)

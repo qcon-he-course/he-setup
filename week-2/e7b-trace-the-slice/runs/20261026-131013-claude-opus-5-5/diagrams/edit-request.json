@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Pet Edit Request Trace",
+    "output": ".harness/diagrams/edit-request.html",
+    "viewBox": [1020, 700],
+    "column_fit": "spread",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "default": { "label": "Read in the code" },
+        "dashed": { "label": "Inferred, not checked" },
+        "emphasis": { "label": "Seen when it ran" }
+      }
+    }
+  },
+  "participants": [
+    { "id": "browser", "type": "external", "label": "Browser", "sublabel": "front desk" },
+    { "id": "mvc", "type": "backend", "label": "Spring MVC", "sublabel": "DispatcherServlet" },
+    { "id": "ctrl", "type": "backend", "label": "PetController", "sublabel": "owner package" },
+    { "id": "binder", "type": "backend", "label": "WebDataBinder", "sublabel": "pet binder" },
+    { "id": "validator", "type": "security", "label": "PetValidator", "sublabel": "@Valid Pet" },
+    { "id": "repo", "type": "backend", "label": "Repositories", "sublabel": "Owner + PetType JPA" },
+    { "id": "db", "type": "database", "label": "Database", "sublabel": "H2 pets table" }
+  ],
+  "segments": [
+    { "from": 160, "to": 300, "label": "Model attributes" },
+    { "from": 320, "to": 440, "label": "Bind + validate" },
+    { "from": 460, "to": 580, "label": "Handler + save" }
+  ],
+  "messages": [
+    { "id": "post-edit", "from": "browser", "to": "mvc", "y": 165, "label": "POST /owners/1/pets/1/edit", "variant": "emphasis", "note": "Network log in the bug report; probe test showed handler processUpdateForm." },
+    { "id": "model-attrs", "from": "mvc", "to": "ctrl", "y": 200, "label": "@ModelAttribute types, owner, pet", "variant": "default", "note": "PetController.java:62-87" },
+    { "id": "find-owner", "from": "ctrl", "to": "repo", "y": 232, "label": "findPetTypes, findById(1) x2", "variant": "default", "note": "PetController.java:64, 69, 83" },
+    { "id": "select", "from": "repo", "to": "db", "y": 262, "label": "SELECT owner, pets, types", "variant": "dashed", "note": "SQL text not checked; open-in-view=false so each findById is its own transaction (inferred)." },
+    { "id": "owner-pet", "from": "repo", "to": "ctrl", "y": 292, "label": "owner, pet = owner.getPet(1)", "variant": "default", "note": "PetController.java:86, Owner.java:129-139" },
+    { "id": "init-binder", "from": "mvc", "to": "binder", "y": 328, "label": "@InitBinder(pet): validator, no id", "variant": "default", "note": "PetController.java:94-98" },
+    { "id": "bind", "from": "binder", "to": "ctrl", "y": 358, "label": "bind name, type=cat, birthDate=2027-01-15", "variant": "default", "note": "PetTypeFormatter.parse; Pet.birthDate @DateTimeFormat yyyy-MM-dd" },
+    { "id": "validate", "from": "binder", "to": "validator", "y": 392, "label": "@Valid -> validate(pet)", "variant": "emphasis", "note": "Probe: blank name gave exactly one error, name=required." },
+    { "id": "no-date-rule", "from": "validator", "to": "binder", "y": 424, "label": "no future-date rule: 0 errors", "variant": "emphasis", "note": "PetValidator.java:55-58 checks only null." },
+    { "id": "handler", "from": "mvc", "to": "ctrl", "y": 466, "label": "processUpdateForm(owner, pet, result)", "variant": "emphasis", "note": "Probe print: Handler PetController#processUpdateForm. Name check only; date check removed in 84bb894." },
+    { "id": "save", "from": "ctrl", "to": "repo", "y": 500, "label": "updatePetDetails -> saveAndFlush(owner)", "variant": "default", "note": "PetController.java:183-197" },
+    { "id": "update", "from": "repo", "to": "db", "y": 532, "label": "birth_date = 2027-01-15", "variant": "emphasis", "note": "Bug report: Leo now 2027-01-15; probe read it back." },
+    { "id": "redirect", "from": "ctrl", "to": "mvc", "y": 558, "label": "flash + redirect:/owners/{ownerId}", "variant": "emphasis", "note": "Probe: flash message 'Pet details has been edited'." },
+    { "id": "response", "from": "mvc", "to": "browser", "y": 584, "label": "302 -> /owners/1", "variant": "emphasis", "note": "Network log and probe status 302." }
+  ],
+  "activations": [
+    { "participant": "mvc", "from": 165, "to": 590, "type": "backend" },
+    { "participant": "ctrl", "from": 200, "to": 560, "type": "backend" },
+    { "participant": "binder", "from": 328, "to": 428, "type": "backend" },
+    { "participant": "validator", "from": 392, "to": 428, "type": "security" },
+    { "participant": "repo", "from": 232, "to": 536, "type": "backend" }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Missing step",
+      "items": [
+        "Add path rejects future dates in processCreationForm (PetController.java:115-118)",
+        "Edit path had the same check until 84bb894 removed it",
+        "PetValidator only rejects a null birthDate"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Also on the path",
+      "items": [
+        "LocaleChangeInterceptor preHandle, registered in WebConfiguration.java:55-58",
+        "Its no-op without ?lang is inferred",
+        "No filters, advice or @Transactional in app code on this path"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+- Draw diagrams with the archify skill and its `archify` command. Save the source and the HTML under `.harness/diagrams/`. Every arrow comes from code you opened or from something you ran.

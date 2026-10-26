@@ -1,0 +1,3 @@
+Bug report from the clinic front desk: "A pet can't have a birth date in the future. When I add a new pet with a future birth date, the form rejects it, as it should. But when I edit a pet and change its birth date to a future date, the form saves it."
+
+The application is running at http://localhost:8080. Reproduce the bug in the browser before anything else. Don't change any files. Report the steps you took, what you saw at each step, and the evidence that shows the bug.

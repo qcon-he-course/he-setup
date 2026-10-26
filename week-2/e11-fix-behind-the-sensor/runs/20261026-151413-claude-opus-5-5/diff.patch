@@ -1,0 +1,553 @@
+diff --git a/src/main/java/org/springframework/samples/petclinic/owner/PetController.java b/src/main/java/org/springframework/samples/petclinic/owner/PetController.java
+index 255b595..04d0b1a 100644
+--- a/src/main/java/org/springframework/samples/petclinic/owner/PetController.java
++++ b/src/main/java/org/springframework/samples/petclinic/owner/PetController.java
+@@ -15,7 +15,6 @@
+  */
+ package org.springframework.samples.petclinic.owner;
+ 
+-import java.time.LocalDate;
+ import java.util.Collection;
+ import java.util.Objects;
+ import java.util.Optional;
+@@ -112,11 +111,6 @@ class PetController {
+ 			result.rejectValue("name", "duplicate", "already exists");
+ 		}
+ 
+-		LocalDate currentDate = LocalDate.now();
+-		if (pet.getBirthDate() != null && pet.getBirthDate().isAfter(currentDate)) {
+-			result.rejectValue("birthDate", "typeMismatch.birthDate");
+-		}
+-
+ 		if (result.hasErrors()) {
+ 			return VIEWS_PETS_CREATE_OR_UPDATE_FORM;
+ 		}
+diff --git a/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java b/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
+index db847c8..cd0c807 100644
+--- a/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
++++ b/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
+@@ -15,6 +15,8 @@
+  */
+ package org.springframework.samples.petclinic.owner;
+ 
++import java.time.LocalDate;
++
+ import org.springframework.util.StringUtils;
+ import org.springframework.validation.Errors;
+ import org.springframework.validation.Validator;
+@@ -56,6 +58,9 @@ public class PetValidator implements Validator {
+ 		if (pet.getBirthDate() == null) {
+ 			errors.rejectValue("birthDate", REQUIRED, REQUIRED);
+ 		}
++		else if (pet.getBirthDate().isAfter(LocalDate.now())) {
++			errors.rejectValue("birthDate", "typeMismatch.birthDate");
++		}
+ 	}
+ 
+ 	/**
+diff --git a/src/test/java/org/springframework/samples/petclinic/owner/PetControllerCharacterizationTests.java b/src/test/java/org/springframework/samples/petclinic/owner/PetControllerCharacterizationTests.java
+new file mode 100644
+index 0000000..e7e7126
+--- /dev/null
++++ b/src/test/java/org/springframework/samples/petclinic/owner/PetControllerCharacterizationTests.java
+@@ -0,0 +1,462 @@
++/*
++ * Copyright 2012-2025 the original author or authors.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      https://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package org.springframework.samples.petclinic.owner;
++
++import java.time.LocalDate;
++import java.util.List;
++import java.util.Optional;
++
++import org.junit.jupiter.api.BeforeEach;
++import org.junit.jupiter.api.Test;
++import org.junit.jupiter.api.condition.DisabledInNativeImage;
++import org.mockito.ArgumentCaptor;
++import org.springframework.beans.factory.annotation.Autowired;
++import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
++import org.springframework.context.annotation.ComponentScan;
++import org.springframework.context.annotation.FilterType;
++import org.springframework.dao.DataIntegrityViolationException;
++import org.springframework.test.context.aot.DisabledInAotMode;
++import org.springframework.test.context.bean.override.mockito.MockitoBean;
++import org.springframework.test.web.servlet.MockMvc;
++import org.springframework.test.web.servlet.MvcResult;
++import org.springframework.validation.BindingResult;
++import org.springframework.validation.FieldError;
++
++import static org.assertj.core.api.Assertions.assertThat;
++import static org.assertj.core.api.Assertions.assertThatThrownBy;
++import static org.mockito.ArgumentMatchers.any;
++import static org.mockito.BDDMockito.given;
++import static org.mockito.Mockito.never;
++import static org.mockito.Mockito.verify;
++import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
++import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
++import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
++import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
++import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
++
++/**
++ * Characterization tests that pin the current validation and save behavior of
++ * {@link PetController} before it is restructured. They describe what the code does
++ * today, not necessarily what it should do.
++ */
++@WebMvcTest(value = PetController.class,
++		includeFilters = @ComponentScan.Filter(value = PetTypeFormatter.class, type = FilterType.ASSIGNABLE_TYPE))
++@DisabledInNativeImage
++@DisabledInAotMode
++class PetControllerCharacterizationTests {
++
++	private static final int OWNER_ID = 1;
++
++	private static final int PETTY_ID = 1;
++
++	private static final int DOGGY_ID = 2;
++
++	private static final String FORM = "pets/createOrUpdatePetForm";
++
++	@Autowired
++	private MockMvc mockMvc;
++
++	@MockitoBean
++	private OwnerRepository owners;
++
++	@MockitoBean
++	private PetTypeRepository types;
++
++	private Owner owner;
++
++	private Pet petty;
++
++	private PetType hamster;
++
++	@BeforeEach
++	void setup() {
++		hamster = new PetType();
++		hamster.setId(3);
++		hamster.setName("hamster");
++		given(this.types.findPetTypes()).willReturn(List.of(hamster));
++
++		owner = new Owner();
++		petty = new Pet();
++		petty.setId(PETTY_ID);
++		petty.setName("petty");
++		petty.setBirthDate(LocalDate.of(2010, 1, 1));
++		Pet doggy = new Pet();
++		doggy.setId(DOGGY_ID);
++		doggy.setName("doggy");
++		owner.addPet(petty);
++		owner.addPet(doggy);
++		given(this.owners.findById(OWNER_ID)).willReturn(Optional.of(owner));
++	}
++
++	// ---- create form ----
++
++	@Test
++	void createSavesOwnerWithNewPetAndFlashesMessage() throws Exception {
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/new", OWNER_ID).param("name", "Betty")
++				.param("type", "hamster")
++				.param("birthDate", "2015-02-12"))
++			.andExpect(status().is3xxRedirection())
++			.andExpect(view().name("redirect:/owners/{ownerId}"))
++			.andExpect(flash().attribute("message", "New Pet has been Added"));
++
++		verify(owners).saveAndFlush(owner);
++		Pet betty = owner.getPet("Betty");
++		assertThat(betty).isNotNull();
++		assertThat(betty.getBirthDate()).isEqualTo(LocalDate.of(2015, 2, 12));
++		assertThat(betty.getType()).isSameAs(hamster);
++		assertThat(owner.getPets()).hasSize(3);
++	}
++
++	@Test
++	void createAcceptsBirthDateOfToday() throws Exception {
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/new", OWNER_ID).param("name", "Betty")
++				.param("type", "hamster")
++				.param("birthDate", LocalDate.now().toString()))
++			.andExpect(status().is3xxRedirection());
++	}
++
++	@Test
++	void createRejectsBirthDateOfTomorrowWithCodeOnlyAndDoesNotSave() throws Exception {
++		MvcResult result = mockMvc
++			.perform(post("/owners/{ownerId}/pets/new", OWNER_ID).param("name", "Betty")
++				.param("type", "hamster")
++				.param("birthDate", LocalDate.now().plusDays(1).toString()))
++			.andExpect(status().isOk())
++			.andExpect(view().name(FORM))
++			.andExpect(model().errorCount(1))
++			.andExpect(model().attributeHasFieldErrorCode("pet", "birthDate", "typeMismatch.birthDate"))
++			.andReturn();
++
++		// SUSPECT: a future date is reported with the parse-error code typeMismatch
++		// and no default message.
++		assertThat(
++				result.getModelAndView().getModel().get("org.springframework.validation.BindingResult.pet").toString())
++			.contains("default message [null]");
++		verify(owners, never()).saveAndFlush(any());
++	}
++
++	@Test
++	void createMissingBirthDateIsRequired() throws Exception {
++		mockMvc.perform(post("/owners/{ownerId}/pets/new", OWNER_ID).param("name", "Betty").param("type", "hamster"))
++			.andExpect(status().isOk())
++			.andExpect(model().errorCount(1))
++			.andExpect(model().attributeHasFieldErrorCode("pet", "birthDate", "required"));
++	}
++
++	@Test
++	void createDuplicateNameIsCaseInsensitive() throws Exception {
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/new", OWNER_ID).param("name", "PETTY")
++				.param("type", "hamster")
++				.param("birthDate", "2015-02-12"))
++			.andExpect(status().isOk())
++			.andExpect(model().errorCount(1))
++			.andExpect(model().attributeHasFieldErrorCode("pet", "name", "duplicate"));
++		verify(owners, never()).saveAndFlush(any());
++	}
++
++	@Test
++	void createDuplicateCheckIgnoresUnsavedPetsOfOwner() throws Exception {
++		Pet unsaved = new Pet();
++		unsaved.setName("Ghost");
++		owner.getPets().add(unsaved);
++
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/new", OWNER_ID).param("name", "ghost")
++				.param("type", "hamster")
++				.param("birthDate", "2015-02-12"))
++			.andExpect(status().is3xxRedirection());
++	}
++
++	@Test
++	void createBlankNameReportsOnlyRequiredNotDuplicate() throws Exception {
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/new", OWNER_ID).param("name", "")
++				.param("type", "hamster")
++				.param("birthDate", "2015-02-12"))
++			.andExpect(model().errorCount(1))
++			.andExpect(model().attributeHasFieldErrorCode("pet", "name", "required"));
++	}
++
++	@Test
++	void createNameOf30CharsAccepted() throws Exception {
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/new", OWNER_ID).param("name", "A".repeat(30))
++				.param("type", "hamster")
++				.param("birthDate", "2015-02-12"))
++			.andExpect(status().is3xxRedirection());
++	}
++
++	@Test
++	void createNameOf31CharsRejectedWithSize() throws Exception {
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/new", OWNER_ID).param("name", "A".repeat(31))
++				.param("type", "hamster")
++				.param("birthDate", "2015-02-12"))
++			.andExpect(status().isOk())
++			.andExpect(model().errorCount(1))
++			.andExpect(model().attributeHasFieldErrorCode("pet", "name", "size"));
++	}
++
++	@Test
++	void createReportsDuplicateNameAndFutureBirthDateTogether() throws Exception {
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/new", OWNER_ID).param("name", "petty")
++				.param("type", "hamster")
++				.param("birthDate", LocalDate.now().plusDays(1).toString()))
++			.andExpect(status().isOk())
++			.andExpect(model().errorCount(2))
++			.andExpect(model().attributeHasFieldErrorCode("pet", "name", "duplicate"))
++			.andExpect(model().attributeHasFieldErrorCode("pet", "birthDate", "typeMismatch.birthDate"));
++	}
++
++	@Test
++	void createReportsEveryValidatorErrorAtOnce() throws Exception {
++		mockMvc.perform(post("/owners/{ownerId}/pets/new", OWNER_ID).param("name", ""))
++			.andExpect(status().isOk())
++			.andExpect(model().errorCount(3))
++			.andExpect(model().attributeHasFieldErrorCode("pet", "name", "required"))
++			.andExpect(model().attributeHasFieldErrorCode("pet", "type", "required"))
++			.andExpect(model().attributeHasFieldErrorCode("pet", "birthDate", "required"));
++	}
++
++	@Test
++	void createUnparseableBirthDateReportsTypeMismatchAndRequired() throws Exception {
++		MvcResult result = mockMvc
++			.perform(post("/owners/{ownerId}/pets/new", OWNER_ID).param("name", "Betty")
++				.param("type", "hamster")
++				.param("birthDate", "2015/02/12"))
++			.andExpect(status().isOk())
++			.andExpect(model().errorCount(2))
++			.andExpect(model().attributeHasFieldErrorCode("pet", "birthDate", "typeMismatch"))
++			.andReturn();
++		BindingResult errors = (BindingResult) result.getModelAndView()
++			.getModel()
++			.get(BindingResult.MODEL_KEY_PREFIX + "pet");
++		assertThat(errors.getFieldErrors("birthDate")).extracting(FieldError::getCode)
++			.containsExactly("typeMismatch", "required");
++	}
++
++	@Test
++	void createIgnoresSubmittedId() throws Exception {
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/new", OWNER_ID).param("id", "99")
++				.param("name", "Betty")
++				.param("type", "hamster")
++				.param("birthDate", "2015-02-12"))
++			.andExpect(status().is3xxRedirection());
++		assertThat(owner.getPet("Betty").getId()).isNull();
++	}
++
++	@Test
++	void createUniqueViolationMessageMatchedCaseInsensitively() throws Exception {
++		given(owners.saveAndFlush(any(Owner.class)))
++			.willThrow(new DataIntegrityViolationException("Duplicate key: UNIQUE_OWNER_PET_NAME"));
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/new", OWNER_ID).param("name", "Betty")
++				.param("type", "hamster")
++				.param("birthDate", "2015-02-12"))
++			.andExpect(status().isOk())
++			.andExpect(view().name(FORM))
++			.andExpect(model().attributeHasFieldErrorCode("pet", "name", "duplicate"));
++	}
++
++	@Test
++	void createOtherIntegrityViolationIsRethrown() {
++		given(owners.saveAndFlush(any(Owner.class))).willThrow(new DataIntegrityViolationException("fk_type"));
++		assertThatThrownBy(() -> mockMvc.perform(post("/owners/{ownerId}/pets/new", OWNER_ID).param("name", "Betty")
++			.param("type", "hamster")
++			.param("birthDate", "2015-02-12"))).hasRootCauseInstanceOf(DataIntegrityViolationException.class);
++	}
++
++	// ---- edit form ----
++
++	@Test
++	void editUpdatesExistingPetAndFlashesMessage() throws Exception {
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/{petId}/edit", OWNER_ID, PETTY_ID).param("name", "Betty")
++				.param("type", "hamster")
++				.param("birthDate", "2015-02-12"))
++			.andExpect(status().is3xxRedirection())
++			.andExpect(view().name("redirect:/owners/{ownerId}"))
++			.andExpect(flash().attribute("message", "Pet details has been edited"));
++
++		verify(owners).saveAndFlush(owner);
++		assertThat(owner.getPets()).hasSize(2);
++		assertThat(petty.getName()).isEqualTo("Betty");
++		assertThat(petty.getBirthDate()).isEqualTo(LocalDate.of(2015, 2, 12));
++		assertThat(petty.getType()).isSameAs(hamster);
++		assertThat(petty.getId()).isEqualTo(PETTY_ID);
++	}
++
++	@Test
++	void editCopiesNameBirthDateAndTypeOntoOwnersPetWhenInstancesDiffer() throws Exception {
++		given(this.owners.findById(OWNER_ID)).willAnswer(invocation -> {
++			Owner fresh = new Owner();
++			Pet freshPetty = new Pet();
++			freshPetty.setId(PETTY_ID);
++			freshPetty.setName("petty");
++			freshPetty.setBirthDate(LocalDate.of(2010, 1, 1));
++			fresh.addPet(freshPetty);
++			return Optional.of(fresh);
++		});
++		ArgumentCaptor<Owner> saved = ArgumentCaptor.forClass(Owner.class);
++
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/{petId}/edit", OWNER_ID, PETTY_ID).param("name", "Betty")
++				.param("type", "hamster")
++				.param("birthDate", "2015-02-12"))
++			.andExpect(status().is3xxRedirection());
++
++		verify(owners).saveAndFlush(saved.capture());
++		assertThat(saved.getValue().getPets()).hasSize(1);
++		Pet savedPet = saved.getValue().getPet(PETTY_ID);
++		assertThat(savedPet.getName()).isEqualTo("Betty");
++		assertThat(savedPet.getBirthDate()).isEqualTo(LocalDate.of(2015, 2, 12));
++		assertThat(savedPet.getType()).isSameAs(hamster);
++	}
++
++	@Test
++	void editDoesNotRequireType() throws Exception {
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/{petId}/edit", OWNER_ID, PETTY_ID).param("name", "Betty")
++				.param("birthDate", "2015-02-12"))
++			.andExpect(status().is3xxRedirection());
++	}
++
++	@Test
++	void editAcceptsBirthDateOfToday() throws Exception {
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/{petId}/edit", OWNER_ID, PETTY_ID).param("name", "Betty")
++				.param("type", "hamster")
++				.param("birthDate", LocalDate.now().toString()))
++			.andExpect(status().is3xxRedirection());
++	}
++
++	@Test
++	void editMissingBirthDateIsRequiredAndNotSaved() throws Exception {
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/{petId}/edit", OWNER_ID, PETTY_ID).param("name", "Betty")
++				.param("type", "hamster")
++				.param("birthDate", ""))
++			.andExpect(status().isOk())
++			.andExpect(view().name(FORM))
++			.andExpect(model().errorCount(1))
++			.andExpect(model().attributeHasFieldErrorCode("pet", "birthDate", "required"));
++		verify(owners, never()).saveAndFlush(any());
++	}
++
++	@Test
++	void editDuplicateNameOfOtherPetIsCaseInsensitive() throws Exception {
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/{petId}/edit", OWNER_ID, DOGGY_ID).param("name", "PETTY")
++				.param("type", "hamster")
++				.param("birthDate", "2015-02-12"))
++			.andExpect(status().isOk())
++			.andExpect(model().errorCount(1))
++			.andExpect(model().attributeHasFieldErrorCode("pet", "name", "duplicate"));
++		verify(owners, never()).saveAndFlush(any());
++	}
++
++	@Test
++	void editOwnNameInDifferentCaseIsAllowed() throws Exception {
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/{petId}/edit", OWNER_ID, PETTY_ID).param("name", "PETTY")
++				.param("birthDate", "2015-02-12"))
++			.andExpect(status().is3xxRedirection());
++		assertThat(petty.getName()).isEqualTo("PETTY");
++	}
++
++	@Test
++	void editNameOf31CharsRejectedWithSize() throws Exception {
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/{petId}/edit", OWNER_ID, PETTY_ID).param("name", "A".repeat(31))
++				.param("birthDate", "2015-02-12"))
++			.andExpect(status().isOk())
++			.andExpect(model().errorCount(1))
++			.andExpect(model().attributeHasFieldErrorCode("pet", "name", "size"));
++	}
++
++	@Test
++	void editBlankNameReportsOnlyRequiredNotDuplicate() throws Exception {
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/{petId}/edit", OWNER_ID, PETTY_ID).param("name", "")
++				.param("birthDate", "2015-02-12"))
++			.andExpect(model().errorCount(1))
++			.andExpect(model().attributeHasFieldErrorCode("pet", "name", "required"));
++	}
++
++	@Test
++	void editRejectedFormHasAlreadyBoundValuesOntoOwnersPet() throws Exception {
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/{petId}/edit", OWNER_ID, DOGGY_ID).param("name", "petty")
++				.param("birthDate", "2015-02-12"))
++			.andExpect(status().isOk());
++		// SUSPECT: binding writes straight onto the owner's loaded pet, so after a
++		// rejected edit the in-memory owner holds two pets named "petty". Nothing is
++		// saved.
++		assertThat(owner.getPet(DOGGY_ID).getName()).isEqualTo("petty");
++		verify(owners, never()).saveAndFlush(any());
++	}
++
++	@Test
++	void editIgnoresSubmittedId() throws Exception {
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/{petId}/edit", OWNER_ID, PETTY_ID).param("id", "99")
++				.param("name", "Betty")
++				.param("birthDate", "2015-02-12"))
++			.andExpect(status().is3xxRedirection());
++		assertThat(petty.getId()).isEqualTo(PETTY_ID);
++	}
++
++	@Test
++	void editUnknownPetIdFailsWithNullPointerAndDoesNotSave() {
++		// SUSPECT: findPet returns null for an unknown pet, validation is skipped and
++		// isNameTakenByAnotherPet dereferences the null pet. The add-pet branch of
++		// updatePetDetails is never reached from this endpoint.
++		assertThatThrownBy(
++				() -> mockMvc.perform(post("/owners/{ownerId}/pets/{petId}/edit", OWNER_ID, 99).param("name", "Betty")
++					.param("type", "hamster")
++					.param("birthDate", "2015-02-12")))
++			.hasRootCauseInstanceOf(NullPointerException.class);
++		verify(owners, never()).saveAndFlush(any());
++	}
++
++	@Test
++	void editUniqueViolationMessageMatchedCaseInsensitively() throws Exception {
++		given(owners.saveAndFlush(any(Owner.class)))
++			.willThrow(new DataIntegrityViolationException("Duplicate key: UNIQUE_OWNER_PET_NAME"));
++		mockMvc
++			.perform(post("/owners/{ownerId}/pets/{petId}/edit", OWNER_ID, PETTY_ID).param("name", "Betty")
++				.param("birthDate", "2015-02-12"))
++			.andExpect(status().isOk())
++			.andExpect(view().name(FORM))
++			.andExpect(model().attributeHasFieldErrorCode("pet", "name", "duplicate"));
++	}
++
++	@Test
++	void editOtherIntegrityViolationIsRethrown() {
++		given(owners.saveAndFlush(any(Owner.class))).willThrow(new DataIntegrityViolationException("fk_type"));
++		assertThatThrownBy(() -> mockMvc
++			.perform(post("/owners/{ownerId}/pets/{petId}/edit", OWNER_ID, PETTY_ID).param("name", "Betty")
++				.param("birthDate", "2015-02-12")))
++			.hasRootCauseInstanceOf(DataIntegrityViolationException.class);
++	}
++
++}
+diff --git a/src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java b/src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java
+index b45ffd4..dc80491 100644
+--- a/src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java
++++ b/src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java
+@@ -241,6 +241,22 @@ class PetControllerTests {
+ 				.andExpect(view().name("pets/createOrUpdatePetForm"));
+ 		}
+ 
++		@Test
++		void processUpdateFormRejectsFutureBirthDate() throws Exception {
++			String futureBirthDate = LocalDate.now().plusMonths(1).toString();
++
++			mockMvc
++				.perform(post("/owners/{ownerId}/pets/{petId}/edit", TEST_OWNER_ID, TEST_PET_ID).param("name", "Betty")
++					.param("type", "hamster")
++					.param("birthDate", futureBirthDate))
++				.andExpect(status().isOk())
++				.andExpect(view().name("pets/createOrUpdatePetForm"))
++				.andExpect(model().attributeHasNoErrors("owner"))
++				.andExpect(model().attributeHasErrors("pet"))
++				.andExpect(model().attributeHasFieldErrors("pet", "birthDate"))
++				.andExpect(model().attributeHasFieldErrorCode("pet", "birthDate", "typeMismatch.birthDate"));
++		}
++
+ 		@Test
+ 		void processUpdateFormWithBlankName() throws Exception {
+ 			mockMvc
+diff --git a/src/test/resources/archunit_store/1cbfc1d1-c4c3-4fdb-b562-260ce0bb3bc5 b/src/test/resources/archunit_store/1cbfc1d1-c4c3-4fdb-b562-260ce0bb3bc5
+index c2fe58a..8d9de0d 100644
+--- a/src/test/resources/archunit_store/1cbfc1d1-c4c3-4fdb-b562-260ce0bb3bc5
++++ b/src/test/resources/archunit_store/1cbfc1d1-c4c3-4fdb-b562-260ce0bb3bc5
+@@ -1,6 +1,5 @@
+ Method <org.springframework.samples.petclinic.owner.OwnerController.processFindForm(int, org.springframework.samples.petclinic.owner.Owner, org.springframework.validation.BindingResult, org.springframework.ui.Model, org.springframework.web.servlet.mvc.support.RedirectAttributes)> calls method <org.springframework.validation.BindingResult.rejectValue(java.lang.String, java.lang.String, java.lang.String)> in (OwnerController.java:118)
+ Method <org.springframework.samples.petclinic.owner.OwnerController.processUpdateOwnerForm(org.springframework.samples.petclinic.owner.Owner, org.springframework.validation.BindingResult, int, org.springframework.web.servlet.mvc.support.RedirectAttributes)> calls method <org.springframework.validation.BindingResult.rejectValue(java.lang.String, java.lang.String, java.lang.String)> in (OwnerController.java:162)
+-Method <org.springframework.samples.petclinic.owner.PetController.processCreationForm(org.springframework.samples.petclinic.owner.Owner, org.springframework.samples.petclinic.owner.Pet, org.springframework.validation.BindingResult, org.springframework.web.servlet.mvc.support.RedirectAttributes)> calls method <org.springframework.validation.BindingResult.rejectValue(java.lang.String, java.lang.String)> in (PetController.java:117)
+ Method <org.springframework.samples.petclinic.owner.PetController.processCreationForm(org.springframework.samples.petclinic.owner.Owner, org.springframework.samples.petclinic.owner.Pet, org.springframework.validation.BindingResult, org.springframework.web.servlet.mvc.support.RedirectAttributes)> calls method <org.springframework.validation.BindingResult.rejectValue(java.lang.String, java.lang.String, java.lang.String)> in (PetController.java:112)
+ Method <org.springframework.samples.petclinic.owner.PetController.processCreationForm(org.springframework.samples.petclinic.owner.Owner, org.springframework.samples.petclinic.owner.Pet, org.springframework.validation.BindingResult, org.springframework.web.servlet.mvc.support.RedirectAttributes)> calls method <org.springframework.validation.BindingResult.rejectValue(java.lang.String, java.lang.String, java.lang.String)> in (PetController.java:132)
+ Method <org.springframework.samples.petclinic.owner.PetController.processUpdateForm(org.springframework.samples.petclinic.owner.Owner, org.springframework.samples.petclinic.owner.Pet, org.springframework.validation.BindingResult, org.springframework.web.servlet.mvc.support.RedirectAttributes)> calls method <org.springframework.validation.BindingResult.rejectValue(java.lang.String, java.lang.String, java.lang.String)> in (PetController.java:149)

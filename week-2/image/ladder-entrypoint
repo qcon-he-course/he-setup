@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Start-up of every ladder container. As root: build /etc/claude-code from the
+# floor and the layers, and record what was built. As node: prepare the tools
+# the layers need (index PetClinic for Serena and code-graph-rag), then run the
+# command, normally Claude Code. Everything printed before the command goes to
+# stderr, so an unattended run's stdout holds only the agent's answer.
+set -euo pipefail
+
+if [ "$(id -u)" != 0 ]; then
+  echo "ladder: the entrypoint must start as root" >&2
+  exit 1
+fi
+
+ladder-assemble >&2
+if [ -d /record ]; then
+  rm -rf /record/etc-claude-code
+  cp -r /etc/claude-code /record/etc-claude-code
+fi
+
+as_node=(setpriv --reuid=node --regid=node --init-groups env HOME=/home/node USER=node)
+
+if [ "${1:-}" = claude ] && [ "${LADDER_PREPARE:-1}" = 1 ]; then
+  if [ -d /record ]; then
+    "${as_node[@]}" ladder-prepare 2>&1 | tee /record/prepare.log >&2
+  else
+    "${as_node[@]}" ladder-prepare >&2
+  fi
+fi
+
+exec "${as_node[@]}" "$@"

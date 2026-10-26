@@ -1,0 +1,113 @@
+#!/usr/bin/env python3
+"""Build /etc/claude-code from the floor and the layers named in LADDER_LAYERS.
+
+Each layer is a folder under /ladder/layers/<name>/ and may hold:
+  rules.md        appended to the managed CLAUDE.md, in layer order
+  settings.json   deep-merged into managed-settings.d/50-layers.json (lists are joined)
+  mcp.json        {"mcpServers": {...}} merged into managed-mcp.json
+  skills/<name>/  copied into the managed skills folder
+  archify         an empty file: copy archify's own skill into the managed skills
+
+managed-mcp.json is always written, empty when no layer adds a server, so
+Claude Code never loads a repository's .mcp.json. Runs as root at start-up.
+"""
+import json
+import os
+import re
+import shutil
+import sys
+
+LAYERS = "/ladder/layers"
+FLOOR = "/opt/ladder/floor"
+OUT = "/etc/claude-code"
+
+
+def merge(a, b):
+    if isinstance(a, dict) and isinstance(b, dict):
+        out = dict(a)
+        for k, v in b.items():
+            out[k] = merge(a[k], v) if k in a else v
+        return out
+    if isinstance(a, list) and isinstance(b, list):
+        return a + [x for x in b if x not in a]
+    return b
+
+
+def main():
+    names = os.environ.get("LADDER_LAYERS", "").split()
+    if os.path.isdir(OUT):
+        shutil.rmtree(OUT)
+    os.makedirs(os.path.join(OUT, "managed-settings.d"))
+    os.makedirs(os.path.join(OUT, ".claude", "skills"))
+    shutil.copy(os.path.join(FLOOR, "managed-settings.json"), OUT)
+
+    rules, settings, servers, skills = [], {}, {}, []
+    for name in names:
+        d = os.path.join(LAYERS, name)
+        if not os.path.isdir(d):
+            sys.exit(f"ladder: layer {name} not found in {LAYERS}")
+        p = os.path.join(d, "rules.md")
+        if os.path.isfile(p):
+            with open(p, encoding="utf-8") as fh:
+                rules.append(fh.read().strip())
+        p = os.path.join(d, "settings.json")
+        if os.path.isfile(p):
+            with open(p, encoding="utf-8") as fh:
+                settings = merge(settings, json.load(fh))
+        p = os.path.join(d, "mcp.json")
+        if os.path.isfile(p):
+            with open(p, encoding="utf-8") as fh:
+                servers.update(json.load(fh).get("mcpServers", {}))
+        sd = os.path.join(d, "skills")
+        if os.path.isdir(sd):
+            for s in sorted(os.listdir(sd)):
+                if os.path.isdir(os.path.join(sd, s)):
+                    shutil.copytree(os.path.join(sd, s), os.path.join(OUT, ".claude", "skills", s), dirs_exist_ok=True)
+                    skills.append(s)
+        if os.path.isfile(os.path.join(d, "archify")):
+            dest = os.path.join(OUT, ".claude", "skills", "archify")
+            shutil.copytree("/opt/archify", dest, dirs_exist_ok=True)
+            # The skill's docs run `node bin/archify.mjs`, relative to the skill's
+            # folder; the agent works in /work, and the permission is
+            # Bash(archify *), so the docs name the `archify` command instead.
+            for root, _, files in os.walk(dest):
+                for f in files:
+                    if f.endswith(".md"):
+                        p = os.path.join(root, f)
+                        with open(p, encoding="utf-8") as fh:
+                            text = fh.read()
+                        new = re.sub(r"node (?:archify/)?bin/archify\.mjs\b", "archify", text)
+                        if new != text:
+                            with open(p, "w", encoding="utf-8") as fh:
+                                fh.write(new)
+            skills.append("archify")
+
+    if rules:
+        with open(os.path.join(OUT, "CLAUDE.md"), "w", encoding="utf-8") as fh:
+            fh.write("\n\n".join(rules) + "\n")
+    with open(os.path.join(OUT, "managed-settings.d", "50-layers.json"), "w", encoding="utf-8") as fh:
+        json.dump(settings, fh, indent=2)
+        fh.write("\n")
+    with open(os.path.join(OUT, "managed-mcp.json"), "w", encoding="utf-8") as fh:
+        json.dump({"mcpServers": servers}, fh, indent=2)
+        fh.write("\n")
+    for root, dirs, files in os.walk(OUT):
+        os.chmod(root, 0o755)
+        for f in files:
+            os.chmod(os.path.join(root, f), 0o644)
+    for f in ("archify",):
+        p = os.path.join(OUT, ".claude", "skills", f, "bin", "archify.mjs")
+        if os.path.isfile(p):
+            os.chmod(p, 0o755)
+
+    print("ladder: layers   " + (" ".join(names) or "none (bare agent)"))
+    print("ladder: rules    " + ("/etc/claude-code/CLAUDE.md, %d lines" % sum(r.count("\n") + 1 for r in rules) if rules else "none"))
+    print("ladder: MCP      " + (", ".join(servers) or "none"))
+    print("ladder: skills   " + (", ".join(skills) or "none"))
+    allow = len(settings.get("permissions", {}).get("allow", []))
+    deny = len(settings.get("permissions", {}).get("deny", []))
+    print(f"ladder: rules of the layers' permissions: {allow} allow, {deny} deny")
+
+
+if __name__ == "__main__":
+    main()

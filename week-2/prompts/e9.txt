@@ -1,0 +1,1 @@
+We are about to restructure the validation in PetController before fixing a bug in the edit form: a pet's birth date can't be in the future, and the add form rejects one, but the edit form saves it. Before anyone changes the code, pin down the current behavior that the restructuring must not change. Don't fix the bug.

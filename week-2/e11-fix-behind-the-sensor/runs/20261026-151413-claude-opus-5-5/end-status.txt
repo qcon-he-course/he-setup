@@ -1,0 +1,5 @@
+ M src/main/java/org/springframework/samples/petclinic/owner/PetController.java
+ M src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
+ M src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java
+ M src/test/resources/archunit_store/1cbfc1d1-c4c3-4fdb-b562-260ce0bb3bc5
+?? src/test/java/org/springframework/samples/petclinic/owner/PetControllerCharacterizationTests.java

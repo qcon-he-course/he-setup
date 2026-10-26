@@ -1,0 +1,47 @@
+# Week 2's ladder: plain Claude Code on one persistent PetClinic clone, a second
+# clone running the application for the browser, and no tripwire network.
+# Started by demo.sh.
+name: he-week2
+
+services:
+  session:
+    build:
+      context: .
+      dockerfile: image/Dockerfile
+    image: he-week2
+    stdin_open: true
+    tty: true
+    environment:
+      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+      LADDER_LAYERS: ${LADDER_LAYERS:-}
+      LADDER_PREPARE: "0"
+      W2_CHROME_HOST: ${W2_CHROME_HOST:-host.docker.internal}
+      W2_CHROME_PORT: ${W2_CHROME_PORT:-9222}
+      # archify's skill checks for a newer release and tells the agent; not in class.
+      ARCHIFY_UPDATE_CHECK_DISABLED: "1"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ${W2_WORK:-./.unset}/petclinic:/work
+      - ${LADDER_CONFIG:-./.unset}:/home/node/.claude
+      - ${LADDER_LAYERS_DIR:-./.unset}:/ladder/layers:ro
+      - ${LADDER_RECORD:-./.unset}:/record
+      - cache:/home/node/.cache
+      - m2:/home/node/.m2
+
+  # PetClinic itself, from its own clone, so the agent's builds in /work never
+  # touch the running application. Published on localhost:8080 for the browser.
+  app:
+    image: he-week2
+    entrypoint: ["setpriv", "--reuid=node", "--regid=node", "--init-groups", "env", "HOME=/home/node"]
+    command: ["./mvnw", "-q", "spring-boot:run", "-Dspring-javaformat.skip=true", "-Dcheckstyle.skip=true"]
+    working_dir: /app
+    ports:
+      - "${W2_APP_PORT:-8080}:8080"
+    volumes:
+      - ${W2_WORK:-./.unset}/app:/app
+      - m2:/home/node/.m2
+
+volumes:
+  cache: {}
+  m2: {}

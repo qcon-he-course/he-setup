@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# archify's CLI, from any folder.
+exec node /opt/archify/bin/archify.mjs "$@"

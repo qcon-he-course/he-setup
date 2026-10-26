@@ -1,0 +1,3 @@
+Bug report from the clinic front desk: "When I edit a pet and change its birth date to a date in the future, the form saves it. When I add a new pet with a future birth date, it is rejected with an error."
+
+Please fix this. Keep the change as small as you can.

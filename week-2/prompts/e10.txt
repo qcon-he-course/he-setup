@@ -1,0 +1,1 @@
+Preparatory refactoring, before the fix: move the future-birth-date check for the add form out of PetController and into PetValidator, applied to new pets only, so that behavior does not change. Every pin must stay green, and the failing test for the bug must stay red.

@@ -1,0 +1,12 @@
+.unset/
+empty-runs/
+# Your own runs stay out of git. The runs from class are kept.
+*/runs/*
+!e7-reproduce-the-bug/runs/20261026-124547-claude-opus-5-5/
+!e7b-trace-the-slice/runs/20261026-131013-claude-opus-5-5/
+!e8-prove-the-bug/runs/20261026-135650-claude-opus-5-5/
+!e9-pin-what-exists/runs/20261026-142703-claude-opus-5-5/
+!e10-refactor-under-pins/runs/20261026-144710-claude-opus-5-5/
+!e11-fix-behind-the-sensor/runs/20261026-151413-claude-opus-5-5/
+!e11-fix-behind-the-sensor/runs/20261026-152941-claude-opus-5-5-shortcut/
+!e11-fix-behind-the-sensor/runs/20261022-1900-claude-opus-5-5-cloudtest-shortcut/
