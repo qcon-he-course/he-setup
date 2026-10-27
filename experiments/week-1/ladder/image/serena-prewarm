@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Build time only: index a tiny Java project with Serena so it downloads the
+# Java language server into the image. A failure is reported and does not fail
+# the build; Serena then downloads the server on first use.
+set -uo pipefail
+root="$(mktemp -d)"
+trap 'rm -rf "$root"' EXIT
+mkdir -p "$root/src/main/java/demo"
+cat > "$root/src/main/java/demo/App.java" <<'EOF'
+package demo;
+public class App {
+    static int twice(int x) { return x * 2; }
+    public static void main(String[] args) { System.out.println(twice(21)); }
+}
+EOF
+git -C "$root" init -q
+if ! timeout 900 serena project index "$root" --ls java --log-level WARNING; then
+  echo "WARNING: Serena could not download the Java language server at build time." >&2
+fi
+# Forget the sample project.
+cfg="$HOME/.serena/serena_config.yml"
+awk '
+  /^projects:/        { print "projects: []"; inproj = 1; next }
+  inproj && /^- /     { next }
+  inproj && /^[^ #-]/ { inproj = 0 }
+  { print }
+' "$cfg" > "$cfg.tmp" && mv "$cfg.tmp" "$cfg"
+rm -rf "$HOME/.cache/serena"
+exit 0

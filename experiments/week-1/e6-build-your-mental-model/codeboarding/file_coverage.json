@@ -1,0 +1,299 @@
+{
+  "version": 1,
+  "generated_at": "2026-10-18T13:52:22.742422+00:00",
+  "analyzed_files": [
+    "src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java",
+    "src/main/java/org/springframework/samples/petclinic/PetClinicRuntimeHints.java",
+    "src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java",
+    "src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java",
+    "src/main/java/org/springframework/samples/petclinic/model/Person.java",
+    "src/main/java/org/springframework/samples/petclinic/model/package-info.java",
+    "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+    "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java",
+    "src/main/java/org/springframework/samples/petclinic/owner/OwnerRepository.java",
+    "src/main/java/org/springframework/samples/petclinic/owner/Pet.java",
+    "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+    "src/main/java/org/springframework/samples/petclinic/owner/PetType.java",
+    "src/main/java/org/springframework/samples/petclinic/owner/PetTypeFormatter.java",
+    "src/main/java/org/springframework/samples/petclinic/owner/PetTypeRepository.java",
+    "src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java",
+    "src/main/java/org/springframework/samples/petclinic/owner/Visit.java",
+    "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+    "src/main/java/org/springframework/samples/petclinic/owner/package-info.java",
+    "src/main/java/org/springframework/samples/petclinic/package-info.java",
+    "src/main/java/org/springframework/samples/petclinic/system/CacheConfiguration.java",
+    "src/main/java/org/springframework/samples/petclinic/system/CrashController.java",
+    "src/main/java/org/springframework/samples/petclinic/system/WebConfiguration.java",
+    "src/main/java/org/springframework/samples/petclinic/system/WelcomeController.java",
+    "src/main/java/org/springframework/samples/petclinic/system/package-info.java",
+    "src/main/java/org/springframework/samples/petclinic/vet/Specialty.java",
+    "src/main/java/org/springframework/samples/petclinic/vet/Vet.java",
+    "src/main/java/org/springframework/samples/petclinic/vet/VetController.java",
+    "src/main/java/org/springframework/samples/petclinic/vet/VetRepository.java",
+    "src/main/java/org/springframework/samples/petclinic/vet/Vets.java",
+    "src/main/java/org/springframework/samples/petclinic/vet/package-info.java"
+  ],
+  "not_analyzed_files": [
+    {
+      "path": "CONTRIBUTING.md",
+      "reason": "other"
+    },
+    {
+      "path": "LICENSE.txt",
+      "reason": "other"
+    },
+    {
+      "path": "README.md",
+      "reason": "other"
+    },
+    {
+      "path": "docker-compose.yml",
+      "reason": "other"
+    },
+    {
+      "path": "gradlew",
+      "reason": "other"
+    },
+    {
+      "path": "gradlew.bat",
+      "reason": "other"
+    },
+    {
+      "path": "k8s/db.yml",
+      "reason": "other"
+    },
+    {
+      "path": "k8s/petclinic.yml",
+      "reason": "other"
+    },
+    {
+      "path": "mvnw",
+      "reason": "other"
+    },
+    {
+      "path": "mvnw.cmd",
+      "reason": "other"
+    },
+    {
+      "path": "pom.xml",
+      "reason": "other"
+    },
+    {
+      "path": "src/checkstyle/nohttp-checkstyle-suppressions.xml",
+      "reason": "other"
+    },
+    {
+      "path": "src/checkstyle/nohttp-checkstyle.xml",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/banner.txt",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/db/h2/data.sql",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/db/h2/schema.sql",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/db/mysql/data.sql",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/db/mysql/petclinic_db_setup_mysql.txt",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/db/mysql/schema.sql",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/db/mysql/user.sql",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/db/postgres/data.sql",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/db/postgres/petclinic_db_setup_postgres.txt",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/db/postgres/schema.sql",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/static/resources/css/petclinic.css",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/static/resources/fonts/montserrat-webfont.svg",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/static/resources/fonts/varela_round-webfont.svg",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/static/resources/images/spring-logo.svg",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/templates/error.html",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/templates/fragments/inputField.html",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/templates/fragments/layout.html",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/templates/fragments/selectField.html",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/templates/owners/createOrUpdateOwnerForm.html",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/templates/owners/findOwners.html",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/templates/owners/ownerDetails.html",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/templates/owners/ownersList.html",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/templates/pets/createOrUpdatePetForm.html",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/templates/pets/createOrUpdateVisitForm.html",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/templates/vets/vetList.html",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/resources/templates/welcome.html",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/scss/header.scss",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/scss/petclinic.scss",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/scss/responsive.scss",
+      "reason": "other"
+    },
+    {
+      "path": "src/main/scss/typography.scss",
+      "reason": "other"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/MySqlIntegrationTests.java",
+      "reason": "codeboardingignore"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/MysqlTestApplication.java",
+      "reason": "codeboardingignore"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/PetClinicConcurrencyTests.java",
+      "reason": "codeboardingignore"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/PetClinicIntegrationTests.java",
+      "reason": "codeboardingignore"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/PostgresIntegrationTests.java",
+      "reason": "codeboardingignore"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/model/ValidatorTests.java",
+      "reason": "codeboardingignore"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java",
+      "reason": "codeboardingignore"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/owner/OwnerTests.java",
+      "reason": "codeboardingignore"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java",
+      "reason": "codeboardingignore"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/owner/PetTypeFormatterTests.java",
+      "reason": "codeboardingignore"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/owner/PetValidatorTests.java",
+      "reason": "codeboardingignore"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/owner/VisitControllerTests.java",
+      "reason": "codeboardingignore"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java",
+      "reason": "codeboardingignore"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/service/EntityUtils.java",
+      "reason": "codeboardingignore"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/system/CrashControllerIntegrationTests.java",
+      "reason": "codeboardingignore"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/system/CrashControllerTests.java",
+      "reason": "codeboardingignore"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/system/I18nPropertiesSyncTest.java",
+      "reason": "codeboardingignore"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/system/WelcomeControllerTests.java",
+      "reason": "codeboardingignore"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/vet/VetControllerTests.java",
+      "reason": "codeboardingignore"
+    },
+    {
+      "path": "src/test/java/org/springframework/samples/petclinic/vet/VetTests.java",
+      "reason": "codeboardingignore"
+    }
+  ],
+  "summary": {
+    "total_files": 93,
+    "analyzed": 30,
+    "not_analyzed": 63,
+    "not_analyzed_by_reason": {
+      "other": 43,
+      "codeboardingignore": 20
+    }
+  }
+}

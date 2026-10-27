@@ -1,0 +1,30 @@
+# Experiment 1: the tripwire and plain Claude Code on one private network.
+# Started by tripwire.sh and open-run.sh; not used by het.
+name: he-e1
+
+services:
+  tripwire:
+    image: python:3.12-slim
+    command: ["python", "-u", "/tripwire.py"]
+    environment:
+      TRIPWIRE_UTC_OFFSET: ${TRIPWIRE_UTC_OFFSET:-+0000}
+    volumes:
+      - ./tripwire.py:/tripwire.py:ro
+    networks:
+      demo:
+        aliases: [tripwire.course.invalid]
+
+  claude:
+    build: ./open-run
+    image: he-e1-open-run
+    stdin_open: true
+    tty: true
+    environment:
+      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+    volumes:
+      - ${E1_WORK:-./.unset}:/work
+      - ${E1_CONFIG:-./.unset}:/home/node/.claude
+    networks: [demo]
+
+networks:
+  demo: {}

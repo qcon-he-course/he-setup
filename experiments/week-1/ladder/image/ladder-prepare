@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Before Claude Code starts: index /work for each code tool the layers load, so
+# the first question doesn't wait for an index. Runs as node. The time it takes
+# is tool start-up, kept apart from the run's minutes.
+set -uo pipefail
+mcp=/etc/claude-code/managed-mcp.json
+has() { jq -e --arg s "$1" '.mcpServers | has($s)' "$mcp" >/dev/null 2>&1; }
+
+if has serena; then
+  # Serena's index is kept between runs; its memories are not, so nothing one
+  # run learned reaches the next.
+  rm -rf /home/node/.cache/serena/work/.serena/memories
+  echo "ladder: Serena is indexing /work with the Java language server..."
+  start=$SECONDS
+  if timeout 600 serena project index /work --ls java --log-level WARNING >/tmp/serena-index.log 2>&1; then
+    echo "ladder: Serena index ready in $((SECONDS - start)) s"
+  else
+    echo "ladder: Serena's index failed after $((SECONDS - start)) s; it will index on first use. Log:" >&2
+    tail -20 /tmp/serena-index.log >&2
+  fi
+fi
+
+if has code-graph-rag; then
+  echo "ladder: code-graph-rag is building the graph of /work in Memgraph..."
+  start=$SECONDS
+  if ladder-mcp-call index_repository; then
+    echo "ladder: graph ready in $((SECONDS - start)) s"
+    # The project name the graph uses, for the cgr shim's --project.
+    home="${CGR_HOME:-/home/node/.cache/cgr}"
+    mkdir -p "$home"
+    ladder-mcp-call list_projects 2>/dev/null | jq -r '.projects[0] // empty' > "$home/project"
+    echo "ladder: graph project $(cat "$home/project")"
+  else
+    echo "ladder: the graph was not built. Is Memgraph running? (./run.sh starts it for e4 and e6)" >&2
+  fi
+fi
+exit 0

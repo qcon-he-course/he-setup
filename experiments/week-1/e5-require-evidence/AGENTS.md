@@ -1,0 +1,10 @@
+# Verified facts about this repository
+
+Each line was checked against the code. Where the README disagrees, the README is wrong.
+
+- With no profile, the app runs on H2 in memory, not PostgreSQL: `application.properties` sets `database=h2` and no datasource URL, and H2 is a runtime dependency. The `mysql` and `postgres` profiles override `database` and the datasource; schema and data load from `db/${database}/`. (`src/main/resources/application.properties:2-4`, `pom.xml:76-80`)
+- The vets cache has no size limit and no expiry. `VetRepository.findAll` is `@Cacheable("vets")`, and Spring Boot uses its Caffeine cache manager, because the pom has the JCache API but no JCache provider; `system/CacheConfiguration`, a JCache customizer, never applies. (`vet/VetRepository.java:45, 55`, `pom.xml:67-70, 81-85`; checked in the running app, `/actuator/caches`)
+- There is no Pet or Visit repository. `PetController` and `VisitController` load the `Owner` through `OwnerRepository`, change its pets or visits, and save the owner; JPA cascades from `Owner.pets` to `Pet.visits` (`@OneToMany(cascade = ALL)`) write the rows. (`owner/Owner.java:67-70`, `owner/Pet.java:56-59`, `owner/PetController.java:126`, `owner/VisitController.java:109`)
+- All three schemas have a unique constraint on owner and pet name: H2's and Postgres's are named `unique_owner_pet_name`, Postgres's on `LOWER(name)`; MySQL's is unnamed. In H2 the name column is `VARCHAR_IGNORECASE`. (`db/h2/schema.sql:48, 55`, `db/postgres/schema.sql:45`, `db/mysql/schema.sql:47`)
+- `./mvnw verify` fails on unformatted code (`spring-javaformat` validate) and on any plain `http://` URL in any file (nohttp checkstyle; suppressions in `src/checkstyle/nohttp-checkstyle-suppressions.xml`). Run `./mvnw spring-javaformat:apply` after an edit. (`pom.xml:207-212, 220-245`)
+- `I18nPropertiesSyncTest` fails if a message key is missing from any `messages_*.properties` file, or if a template has hard-coded text. (`src/test/java/org/springframework/samples/petclinic/system/I18nPropertiesSyncTest.java:40, 87`)

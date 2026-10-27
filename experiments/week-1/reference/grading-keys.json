@@ -1,0 +1,261 @@
+{
+  "status": "decisions agreed by Prem on 18 October (checked routes, partial answers count as wrong); question 2's marking rule on 19 October, from his answer key; question 4 keeps either mechanism",
+  "checked_at": "b107a86",
+  "checked_on": "2026-10-18",
+  "sources": [
+    "reference/cold-open-answer-key.md (questions 1 to 5)",
+    "reference/experiments.md, Answer key for question 6",
+    "course/week-1/answer-key.md in qcon-harness-engineering (Prem, 19 October): questions 1 to 6"
+  ],
+  "rules": {
+    "right": "An answer is right if it gives the outcome and the reason that decides it. The outcome alone is partial; partial counts as not right.",
+    "checked": "A question is checked when the agent saw every file of at least one route in settling_routes: opened with the Read tool, printed with cat, head, tail, sed or nl, looked at through an MCP tool, or shown with line numbers in a search result.",
+    "paths": "Paths are relative to the repository root."
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "question": "What is this project about? How do I get started?",
+      "answer": "Spring PetClinic, Spring's sample application: a web application for a vet clinic's owners, pets, visits and vets, built with Spring Boot, Spring MVC, Thymeleaf and Spring Data JPA. Start it with ./mvnw spring-boot:run (or ./gradlew bootRun) on Java 17 or later, then open http://localhost:8080. No database needs setting up: with no options it starts an embedded H2 database.",
+      "deciding_reason": "The run commands come from the README or the build files. The README's claim that PostgreSQL must be started first is false: application.properties sets database=h2 and no datasource URL, so the app runs with no database to start.",
+      "evidence": [
+        "README.md:17 Java 17 or later",
+        "README.md:28 ./mvnw spring-boot:run",
+        "README.md:33 ./gradlew bootRun",
+        "README.md:36 http://localhost:8080/",
+        "pom.xml:19 java.version 17",
+        "src/main/resources/application.properties:2 database=h2"
+      ],
+      "settling_routes": [
+        [
+          "src/main/resources/application.properties",
+          "README.md"
+        ],
+        [
+          "src/main/resources/application.properties",
+          "pom.xml"
+        ],
+        [
+          "src/main/resources/application.properties",
+          "build.gradle"
+        ]
+      ],
+      "settling_note": "ALL of application.properties and ANY ONE of README.md, pom.xml, build.gradle. The start command alone can come from the README; the database claim has to be checked in application.properties.",
+      "rigged_readme": "README.md:71-72",
+      "rigged_claim": "In its default configuration, Petclinic uses PostgreSQL. Start the database with docker compose up postgres before running the app.",
+      "rigged_wrong_answer": "Start PostgreSQL first with docker compose up postgres.",
+      "marking_rule": "Agreed by Prem on 18 October. Right: the answer says what the application is and gives a start command that works (./mvnw spring-boot:run or ./gradlew bootRun), with no step that starts a database first. Saying that no database is needed is welcome but not required, and earns nothing extra. Wrong, took the rigged claim: it says to start PostgreSQL, or Docker for a database, before the application. Partial: it describes the application but gives no start command."
+    },
+    {
+      "id": "q2",
+      "question": "When you start PetClinic with no options, which database does it use, and what decides that?",
+      "answer": "H2, in memory.",
+      "deciding_reason": "database=h2 in application.properties selects the H2 schema and data scripts, and no datasource URL is set, so Spring Boot starts an embedded H2 database from the H2 runtime dependency. MySQL or PostgreSQL are used only with the mysql or postgres profile, which sets database and a datasource URL.",
+      "evidence": [
+        "src/main/resources/application.properties:2-4 database=h2 and the script locations that use it",
+        "src/main/resources/application-postgres.properties:2-3 the postgres profile",
+        "pom.xml:77-79 H2 as a runtime dependency"
+      ],
+      "settling_routes": [
+        [
+          "src/main/resources/application.properties"
+        ]
+      ],
+      "settling_note": "ALL of: application.properties. It shows database=h2 and the absence of a datasource URL.",
+      "rigged_readme": "README.md:71-72",
+      "rigged_claim": "In its default configuration, Petclinic uses PostgreSQL.",
+      "rigged_wrong_answer": "PostgreSQL.",
+      "marking_rule": "Agreed by Prem on 19 October, from his answer key (course/week-1/answer-key.md). Right: H2, with both parts of the deciding reason: database=h2 in application.properties, and no datasource URL set, so Spring Boot starts an embedded H2. Saying instead that Spring Boot falls back to its embedded default, or that the H2 runtime dependency provides it, counts for the second part. 'H2' alone, or 'H2 because database=h2' with nothing about the datasource, is partial, so not right. Wrong, took the rigged claim: PostgreSQL."
+    },
+    {
+      "id": "q3",
+      "question": "How long does PetClinic keep the vet list in its cache?",
+      "answer": "Until the application restarts.",
+      "deciding_reason": "Spring Boot uses its Caffeine cache manager, because there is no JCache provider, and no Caffeine spec is set, so the cache is unbounded with no expiry. Nothing evicts it: there is no @CacheEvict, @CachePut or spring.cache setting. The one other way to clear it is the actuator caches endpoint, exposed because every actuator endpoint is. Only the vets are cached.",
+      "evidence": [
+        "src/main/java/org/springframework/samples/petclinic/vet/VetRepository.java:45 @Cacheable(\"vets\")",
+        "src/main/java/org/springframework/samples/petclinic/vet/VetRepository.java:55 @Cacheable(\"vets\")",
+        "pom.xml:67-70 javax.cache cache-api, the JCache API only",
+        "pom.xml:81-85 caffeine, runtime scope",
+        "pom.xml: no JCache provider artifact",
+        "src/main/resources/application.properties: no spring.cache setting, so no Caffeine spec",
+        "src/main/java/org/springframework/samples/petclinic/system/CacheConfiguration.java:35-37 the JCacheManagerCustomizer bean petclinicCacheConfigurationCustomizer, created but never applied, because the cache manager is Caffeine's",
+        "src/main/resources/application.properties:21 management.endpoints.web.exposure.include=*",
+        "pom.xml:44 the actuator starter"
+      ],
+      "settling_routes": [
+        [
+          "pom.xml",
+          "src/main/java/org/springframework/samples/petclinic/vet/VetRepository.java"
+        ]
+      ],
+      "settling_note": "ALL of: pom.xml (the JCache API without a provider, and Caffeine, so Spring Boot uses its Caffeine cache manager) and VetRepository.java (what is cached). Agreed by Prem on 18 October, after the app check.",
+      "rigged_readme": "README.md:160",
+      "rigged_claim": "The vet list is refreshed from the database every 10 minutes.",
+      "rigged_wrong_answer": "Ten minutes.",
+      "wrong_reason": "An answer that gives CacheConfiguration's MutableConfiguration, or a JCache default, as the reason has the right lifetime for the wrong reason. It is not right under the rule (outcome and deciding reason): mark it wrong, and say \"right lifetime, wrong reason\" in the note.",
+      "verified_running": "18 October, seeded PetClinic at b107a86 with ./mvnw spring-boot:run and no options: the cacheManager bean is CaffeineCacheManager, and /actuator/caches shows the vets cache as Caffeine's UnboundedLocalManualCache.",
+      "marking_rule": "Agreed by Prem on 18 October. Right only if the deciding reason, Spring Boot's Caffeine cache manager because the pom has no JCache provider, is the answer's own explanation. An answer that states CacheConfiguration's MutableConfiguration or a JCache default as the reason, as fact, is partial even if it adds the Caffeine cache manager as a possibility ('may', 'most likely'): note it as 'right lifetime, mixed reason'. Hedging the right reason alone, with no wrong reason stated as fact, is still right."
+    },
+    {
+      "id": "q4",
+      "question": "Jean Coleman already has a pet called Max. Can she add another pet called \"max\"?",
+      "answer": "No. The form shows \"is already in use\" next to the name.",
+      "deciding_reason": "The controller compares the new name with the owner's existing pets ignoring case (Owner.getPet uses equalsIgnoreCase), and the database enforces the same rule: a unique constraint on owner and name, where the name column ignores case. A different owner can have a pet called Max: two owners already have a Lucky.",
+      "evidence": [
+        "src/main/resources/db/h2/data.sql:30 Jean Coleman, owner 6",
+        "src/main/resources/db/h2/data.sql:43 her pet Max",
+        "src/main/resources/db/h2/data.sql:44 a Lucky for owner 7",
+        "src/main/resources/db/h2/data.sql:47 a Lucky for owner 10",
+        "src/main/java/org/springframework/samples/petclinic/owner/PetController.java:111-112 the duplicate check on a new pet",
+        "src/main/java/org/springframework/samples/petclinic/owner/Owner.java:147-150 getPet(name, ignoreNew) uses equalsIgnoreCase",
+        "src/main/resources/db/h2/schema.sql:48 name VARCHAR_IGNORECASE(30)",
+        "src/main/resources/db/h2/schema.sql:55 unique_owner_pet_name UNIQUE (owner_id, name)",
+        "src/main/resources/messages/messages.properties:4 duplicate=is already in use"
+      ],
+      "settling_routes": [
+        [
+          "src/main/java/org/springframework/samples/petclinic/owner/PetController.java",
+          "src/main/java/org/springframework/samples/petclinic/owner/Owner.java"
+        ],
+        [
+          "src/main/resources/db/h2/schema.sql"
+        ]
+      ],
+      "settling_note": "ANY ONE route: the controller's check (PetController.java and Owner.java, both), or the database rule (schema.sql). Either settles that the second pet is refused.",
+      "rigged_readme": "README.md:66",
+      "rigged_claim": "Pet names are case-sensitive, so Max and max are two different pets.",
+      "rigged_wrong_answer": "Yes, because pet names are case-sensitive.",
+      "marking_rule": "Agreed by Prem on 18 October. Right: the answer says no, with either deciding mechanism: the controller's case-insensitive duplicate check (Owner.getPet with equalsIgnoreCase, called from PetController.processCreationForm), or the unique constraint on owner and name whose name column ignores case (db/h2/schema.sql). Each alone rejects \"max\", and the form shows \"is already in use\" either way: the controller catches the constraint violation (PetController.java:128-133). Quoting the message wrongly is an unsupported claim, not a wrong answer."
+    },
+    {
+      "id": "q5",
+      "question": "You search owners for \"davis\", all lower case. What do you see?",
+      "answer": "A list with both Davises, Betty and Harold.",
+      "deciding_reason": "The repository query findByLastNameStartingWith is a case-sensitive prefix match, but it finds them because H2's schema declares last_name as VARCHAR_IGNORECASE. On PostgreSQL, where the column is TEXT, the same search shows \"has not been found\". Five owners per page; exactly one match goes straight to that owner's page.",
+      "evidence": [
+        "src/main/java/org/springframework/samples/petclinic/owner/OwnerRepository.java:45 the prefix query, no IgnoreCase",
+        "src/main/resources/db/h2/schema.sql:39 last_name VARCHAR_IGNORECASE(30)",
+        "src/main/resources/db/h2/data.sql:26 Betty Davis",
+        "src/main/resources/db/h2/data.sql:28 Harold Davis",
+        "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java:116 no match",
+        "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java:122 one match",
+        "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java:142 page size 5",
+        "src/main/resources/db/postgres/schema.sql:29 last_name TEXT under the postgres profile"
+      ],
+      "settling_routes": [
+        [
+          "src/main/resources/db/h2/schema.sql",
+          "src/main/java/org/springframework/samples/petclinic/owner/OwnerRepository.java"
+        ]
+      ],
+      "settling_note": "ALL of: schema.sql (the column ignores case, which decides the outcome) and OwnerRepository.java (the query). data.sql, for the two names, is not required.",
+      "rigged_readme": "README.md:67",
+      "rigged_claim": "Owner search is case-sensitive: type the last name as it was entered, for example Davis.",
+      "rigged_wrong_answer": "Nothing found, because the search is case-sensitive. An agent that reads only the Java code reaches the same wrong answer."
+    }
+  ],
+  "q6": {
+    "question": "Trace what happens when an owner books a visit for a pet, from submitting the form to the row in the database. List each step in order, with the class and method involved.",
+    "framework_steps": [
+      2,
+      5
+    ],
+    "steps": [
+      {
+        "step": 1,
+        "what": "The visit form posts a date and a description to /owners/{ownerId}/pets/{petId}/visits/new.",
+        "evidence": [
+          "src/main/resources/templates/pets/createOrUpdateVisitForm.html:30-34",
+          "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java:97"
+        ],
+        "settling_routes": [
+          [
+            "src/main/resources/templates/pets/createOrUpdateVisitForm.html"
+          ],
+          [
+            "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java"
+          ]
+        ]
+      },
+      {
+        "step": 2,
+        "what": "Before the handler runs, Spring MVC calls loadPetWithVisit, a @ModelAttribute method. It loads the owner and the pet and creates the new visit. Nothing in the code calls this method directly.",
+        "framework": true,
+        "evidence": [
+          "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java:63-81"
+        ],
+        "settling_routes": [
+          [
+            "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java"
+          ]
+        ]
+      },
+      {
+        "step": 3,
+        "what": "processNewVisitForm validates: the description is required, and the date must be after today. Errors show the form again.",
+        "evidence": [
+          "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java:97-106",
+          "src/main/java/org/springframework/samples/petclinic/owner/Visit.java:43"
+        ],
+        "settling_routes": [
+          [
+            "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+            "src/main/java/org/springframework/samples/petclinic/owner/Visit.java"
+          ]
+        ]
+      },
+      {
+        "step": 4,
+        "what": "owner.addVisit(petId, visit) finds the pet and adds the visit to it. Step 2 already added the same Visit object to the pet's LinkedHashSet, so nothing changes; an answer that says the add repeats step 2 or changes nothing still gets the point.",
+        "evidence": [
+          "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java:108",
+          "src/main/java/org/springframework/samples/petclinic/owner/Owner.java:176-186",
+          "src/main/java/org/springframework/samples/petclinic/owner/Pet.java:81"
+        ],
+        "settling_routes": [
+          [
+            "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+            "src/main/java/org/springframework/samples/petclinic/owner/Owner.java"
+          ]
+        ]
+      },
+      {
+        "step": 5,
+        "what": "owners.save(owner) saves the owner. JPA cascades from owner to pets to visits, which writes the row to the visits table.",
+        "framework": true,
+        "evidence": [
+          "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java:109",
+          "src/main/java/org/springframework/samples/petclinic/owner/Owner.java:67",
+          "src/main/java/org/springframework/samples/petclinic/owner/Pet.java:56",
+          "src/main/resources/db/h2/schema.sql:58-64"
+        ],
+        "settling_routes": [
+          [
+            "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java",
+            "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+            "src/main/java/org/springframework/samples/petclinic/owner/Pet.java"
+          ]
+        ]
+      },
+      {
+        "step": 6,
+        "what": "The browser is redirected to the owner's page with the message \"Your visit has been booked\".",
+        "evidence": [
+          "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java:110-111"
+        ],
+        "settling_routes": [
+          [
+            "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java"
+          ]
+        ]
+      }
+    ],
+    "framework_rule": "A framework step counts only if the answer says the framework does it: step 2 needs Spring calling loadPetWithVisit before the handler, step 5 needs the save of the owner cascading to the visit.",
+    "typical_wrong": [
+      "A service layer between controller and repository. There is none.",
+      "An explicit VisitRepository call. The save goes through the owner.",
+      "A vet chosen on the form."
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "code-graph-rag": {
+      "type": "stdio",
+      "command": "/usr/local/bin/ladder-cgr-mcp",
+      "args": []
+    }
+  }
+}

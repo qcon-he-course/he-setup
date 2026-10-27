@@ -1,0 +1,37 @@
+#!/home/node/.local/share/uv/tools/code-graph-rag/bin/python
+"""Call one tool of code-graph-rag's MCP server and print the result.
+
+Usage: ladder-mcp-call <tool> [json arguments]
+Uses the MCP SDK installed with code-graph-rag. ladder-prepare calls
+index_repository with it before Claude Code starts.
+"""
+import asyncio
+import json
+import sys
+
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+
+async def main(tool, args):
+    params = StdioServerParameters(command="/usr/local/bin/ladder-cgr-mcp", args=[])
+    async with stdio_client(params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            if tool == "--list":
+                tools = await session.list_tools()
+                for t in tools.tools:
+                    print(t.name)
+                return 0
+            result = await session.call_tool(tool, args)
+            for c in result.content:
+                text = getattr(c, "text", None)
+                print(text if text is not None else c)
+            return 1 if result.isError else 0
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        sys.exit(__doc__)
+    arguments = json.loads(sys.argv[2]) if len(sys.argv) > 2 else {}
+    sys.exit(asyncio.run(main(sys.argv[1], arguments)))

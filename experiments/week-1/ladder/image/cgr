@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# The cgr command for the agent and the skills: code-graph-rag's CLI on /work.
+# cgr reads a .env file from its working directory and refuses keys it doesn't
+# know, and PetClinic's rigged .env has two, so cgr runs from its own folder
+# and graph queries get the repository through --repo-path.
+set -euo pipefail
+export MEMGRAPH_HOST="${MEMGRAPH_HOST:-memgraph}" MEMGRAPH_PORT="${MEMGRAPH_PORT:-7687}"
+export CGR_SKIP_EMBEDDINGS=1 PYDANTIC_AI_NO_BANNER=1
+export ORCHESTRATOR_PROVIDER=openai ORCHESTRATOR_ENDPOINT=http://127.0.0.1:9/v1 \
+       ORCHESTRATOR_MODEL=none ORCHESTRATOR_API_KEY=no-model-route
+export CYPHER_PROVIDER=openai CYPHER_ENDPOINT=http://127.0.0.1:9/v1 \
+       CYPHER_MODEL=none CYPHER_API_KEY=no-model-route
+home="${CGR_HOME:-/home/node/.cache/cgr}"
+mkdir -p "$home"
+cd "$home"
+# The subcommand is the first word that isn't an option: "cgr -q graph ..." too.
+sub=""
+for a in "$@"; do
+  case "$a" in -*) ;; *) sub="$a"; break ;; esac
+done
+if [ "$sub" = graph ] && [ $# -ge 2 ]; then
+  case " $* " in
+    *" --repo-path"*|*" --help "*) ;;
+    *) set -- "$@" --repo-path /work ;;
+  esac
+  # The name the CLI derives from --repo-path differs from the one the MCP
+  # server indexed /work under, and every query then returns [] (seen on
+  # 18 October). ladder-prepare records the indexed name.
+  case " $* " in
+    *" --project"*|*" --help "*) ;;
+    *) if [ -s "$home/project" ]; then set -- "$@" --project "$(cat "$home/project")"; fi ;;
+  esac
+fi
+exec /home/node/.local/share/uv/tools/code-graph-rag/bin/cgr "$@"

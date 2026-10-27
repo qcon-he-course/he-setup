@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//etc/claude-code/.claude/skills/**)",
+      "Bash(archify *)",
+      "Bash(mkdir -p .harness/*)",
+      "Edit(//work/.harness/**)",
+      "Write(//work/.harness/**)"
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+# The ladder: plain Claude Code for experiments 0 and 2 to 6, and Memgraph for
+# the code graph (experiments 4 and 6). Started by run.sh and codeboarding.sh.
+# Not on experiment 1's demo network, so the tripwire is out of reach.
+name: he-ladder
+
+services:
+  session:
+    build:
+      context: .
+      dockerfile: image/Dockerfile
+    image: he-ladder
+    stdin_open: true
+    tty: true
+    environment:
+      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+      ANTHROPIC_API_KEY: ${LADDER_ANTHROPIC_API_KEY:-}
+      LADDER_LAYERS: ${LADDER_LAYERS:-}
+      LADDER_PREPARE: ${LADDER_PREPARE:-1}
+    volumes:
+      - ${LADDER_WORK:-./.unset}:/work
+      - ${LADDER_CONFIG:-./.unset}:/home/node/.claude
+      - ${LADDER_LAYERS_DIR:-./.unset}:/ladder/layers:ro
+      - ${LADDER_RECORD:-./.unset}:/record
+      - cache:/home/node/.cache
+      - m2:/home/node/.m2
+
+  memgraph:
+    image: memgraph/memgraph-mage:3.3
+    volumes:
+      - memgraph-data:/var/lib/memgraph
+
+volumes:
+  cache: {}
+  m2: {}
+  memgraph-data: {}

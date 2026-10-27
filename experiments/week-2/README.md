@@ -17,13 +17,13 @@ All the steps work on one PetClinic clone. Each step starts from the state the p
 
 ## What you need
 
-- **The setup from Week 1**, in the [README](../README.md) of this repository, with JDK 17 and git.
+- **The setup from Week 1**, in the [README](../../README.md) of this repository, with JDK 17 and git.
 - **Docker.** Docker Desktop, OrbStack or Colima on macOS; Docker Engine with the compose plugin on Linux. The image and Maven's cache need a few gigabytes of disk.
 - **Claude Code and a token.** The agent runs in the container with the token from `claude setup-token`, which needs a Pro, Max, Team or Enterprise plan. Your token goes from Claude Code straight to Anthropic. The runs use Claude Opus 5.5. To use another model, set `LADDER_MODEL`, for example `export LADDER_MODEL=claude-sonnet-5-5`; your results will differ more from the class runs.
 - **Google Chrome**, for the steps with the browser. `./demo.sh chrome` starts a separate Chrome with its own profile. Your usual Chrome is not touched.
 - **Ports 8080 and 9222 free.** To use others, set `W2_APP_PORT` and `W2_CHROME_PORT`.
 
-If you use Codex, you can't run the steps as they are: the container runs Claude Code. You can still read the class runs with `./demo.sh show`, and use the skills in [`../skills`](../skills) with your own agent.
+If you use Codex, you can't run the steps as they are: the container runs Claude Code. You can still read the class runs with `./demo.sh show`, and use the skills in [`../skills`](../../skills) with your own agent.
 
 **Where this has been checked.** On macOS with Colima, during and before the session. On Linux, `./demo.sh chrome` starts `chromium` (set `CHROME` to use another browser), and the container reaches it through `host.docker.internal`; this hasn't been checked. WSL hasn't been checked either. Tell us in Slack if something doesn't work.
 
@@ -119,7 +119,7 @@ The agent is plain Claude Code 2.1.281 in the `he-week2` image, configured only 
 |---|---|
 | `w2-base` | The rules in `rules.md` (build with `./mvnw`, edit with the edit tools, label claims VERIFIED or INFERRED), the permissions, and the status line |
 | `w2-browser` | The Chrome DevTools MCP server, which drives the Chrome on your machine |
-| `w2-skills` | `trace-request`, `prove-bug` and `pin-behavior`, copied from [`../skills`](../skills) |
+| `w2-skills` | `trace-request`, `prove-bug` and `pin-behavior`, copied from [`../skills`](../../skills) |
 | `w2-archify` | archify's skill and command, for e7b's diagram |
 | `w2-sensors` | The three hooks: `protect-sensors.sh` and `check-architecture.sh` |
 

@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "serena": {
+      "type": "stdio",
+      "command": "/usr/local/bin/ladder-serena-mcp",
+      "args": []
+    }
+  }
+}

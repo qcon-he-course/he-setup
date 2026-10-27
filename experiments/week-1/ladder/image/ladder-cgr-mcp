@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# code-graph-rag's MCP server for /work. Indexing and the graph lookups make no
+# model calls. The two natural-language tools (query_code_graph, ask_agent) are
+# denied in the layer's permissions, and point at an address that refuses
+# connections, so they can't reach a model either.
+set -euo pipefail
+unset CLAUDE_CODE_OAUTH_TOKEN ANTHROPIC_API_KEY OPENAI_API_KEY
+# code-graph-rag reads a .env file from its working directory and refuses to
+# start on keys it doesn't know. PetClinic's rigged .env stops it (verified with
+# 0.0.945 on 18 October), so it starts in its own folder and gets the
+# repository through TARGET_REPO_PATH.
+mkdir -p "${CGR_HOME:-/home/node/.cache/cgr}"
+cd "${CGR_HOME:-/home/node/.cache/cgr}"
+export TARGET_REPO_PATH=/work
+export MEMGRAPH_HOST="${MEMGRAPH_HOST:-memgraph}"
+export MEMGRAPH_PORT="${MEMGRAPH_PORT:-7687}"
+export CGR_SKIP_EMBEDDINGS=1
+export ORCHESTRATOR_PROVIDER=openai ORCHESTRATOR_ENDPOINT=http://127.0.0.1:9/v1 \
+       ORCHESTRATOR_MODEL=none ORCHESTRATOR_API_KEY=no-model-route
+export CYPHER_PROVIDER=openai CYPHER_ENDPOINT=http://127.0.0.1:9/v1 \
+       CYPHER_MODEL=none CYPHER_API_KEY=no-model-route
+export PYDANTIC_AI_NO_BANNER=1
+# Memgraph must accept connections before the server starts.
+for _ in $(seq 1 45); do
+  if timeout 1 bash -c ": </dev/tcp/${MEMGRAPH_HOST}/${MEMGRAPH_PORT}" 2>/dev/null; then break; fi
+  sleep 1
+done
+exec /home/node/.local/share/uv/tools/code-graph-rag/bin/code-graph-rag mcp-server

@@ -1,0 +1,46 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__code-graph-rag__list_projects",
+      "mcp__code-graph-rag__resolve",
+      "mcp__code-graph-rag__definition",
+      "mcp__code-graph-rag__callers",
+      "mcp__code-graph-rag__callees",
+      "mcp__code-graph-rag__implementors",
+      "mcp__code-graph-rag__overrides",
+      "mcp__code-graph-rag__importers",
+      "mcp__code-graph-rag__tests_reaching",
+      "mcp__code-graph-rag__get_code_snippet",
+      "mcp__code-graph-rag__get_function_source",
+      "mcp__code-graph-rag__structural_search",
+      "mcp__code-graph-rag__find_duplicate_code",
+      "mcp__code-graph-rag__read_file",
+      "mcp__code-graph-rag__list_directory",
+      "Bash(cgr graph *)",
+      "Bash(cgr -q graph *)",
+      "Bash(cgr stats*)"
+    ],
+    "deny": [
+      "mcp__code-graph-rag__query_code_graph",
+      "mcp__code-graph-rag__ask_agent",
+      "mcp__code-graph-rag__semantic_search",
+      "mcp__code-graph-rag__index_repository",
+      "mcp__code-graph-rag__update_repository",
+      "mcp__code-graph-rag__reingest",
+      "mcp__code-graph-rag__delete_project",
+      "mcp__code-graph-rag__wipe_database",
+      "mcp__code-graph-rag__rename",
+      "mcp__code-graph-rag__write_file",
+      "mcp__code-graph-rag__surgical_replace_code",
+      "mcp__code-graph-rag__structural_replace",
+      "mcp__code-graph-rag__annotate",
+      "Bash(cgr start*)",
+      "Bash(cgr daemon*)",
+      "Bash(cgr stop*)",
+      "Bash(cgr rename*)",
+      "Bash(cgr optimize*)",
+      "Bash(cgr edits*)",
+      "Bash(cgr delete-project*)"
+    ]
+  }
+}

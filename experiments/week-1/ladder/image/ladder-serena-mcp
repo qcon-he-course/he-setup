@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Serena's MCP server for /work, in its Claude Code context.
+set -euo pipefail
+cd /work
+exec serena start-mcp-server --context claude-code --project-from-cwd

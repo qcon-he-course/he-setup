@@ -20,7 +20,7 @@
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-skills="$(cd "$here/../skills" && pwd)"
+skills="$(cd "$here/../../skills" && pwd)"
 W2_REMOTE="${W2_REMOTE:-https://github.com/qcon-he-course/he-petclinic.git}"
 W2_WORK="${W2_WORK:-$HOME/.cache/qcon-he/week2}"
 W2_APP_PORT="${W2_APP_PORT:-8080}"

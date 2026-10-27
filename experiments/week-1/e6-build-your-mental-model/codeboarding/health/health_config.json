@@ -1,0 +1,10 @@
+{
+    "function_size_max": {
+        "description": "Maximum lines of code allowed in a single function before it is flagged. Range: 50-500.",
+        "value": 150
+    },
+    "max_cycles_reported": {
+        "description": "Maximum number of circular dependency cycles to include in the report. Range: 10-200.",
+        "value": 50
+    }
+}

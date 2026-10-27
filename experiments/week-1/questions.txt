@@ -1,0 +1,8 @@
+Answer these questions about this codebase:
+
+1. What is this project about? How do I get started?
+2. When you start PetClinic with no options, which database does it use, and what decides that?
+3. How long does PetClinic keep the vet list in its cache?
+4. Jean Coleman already has a pet called Max. Can she add another pet called "max"?
+5. You search owners for "davis", all lower case. What do you see?
+6. Trace what happens when an owner books a visit for a pet, from submitting the form to the row in the database. List each step in order, with the class and method involved.
