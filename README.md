@@ -132,6 +132,7 @@ If something can't be fixed before the session, come anyway. You can follow the 
 |---|---|---|
 | 1 | [homework/week1.md](homework/week1.md) | [notes/week1.md](notes/week1.md): the ideas, text to copy and further reading. [self-check/](self-check/README.md): did your agent follow a planted instruction? [experiments/week-1/](experiments/week-1/README.md): the class experiments, to run yourself |
 | 2 | [homework/week2.md](homework/week2.md) | [skills/](skills/): the three skills from class. [experiments/week-2/](experiments/week-2/README.md): the class experiments, to run yourself |
+| 3 | [homework/week3.md](homework/week3.md) | [skills/](skills/): the three review skills from class |
 
 ## Updates
 
