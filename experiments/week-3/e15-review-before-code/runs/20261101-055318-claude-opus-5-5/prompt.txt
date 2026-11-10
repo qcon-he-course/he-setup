@@ -1,0 +1,25 @@
+Review the OpenSpec change pc-301 before anyone writes code for it. It was written for this ticket:
+
+PC-301: Record a pet's microchip number. Reception wants to record each pet's microchip number when they add or edit a pet, so we can identify a pet when it is scanned. The same chip shouldn't end up on two pets.
+
+The change is in openspec/changes/pc-301/, with the decisions log from refining the ticket. Put your whole review in your final reply.
+
+Before your review, the harness ran this probe on a throwaway copy of the code. You may cite it as evidence.
+
+## Probe: does the frozen architecture rule catch a new controller call?
+
+The harness ran `./mvnw -q test -Dtest=ArchitectureTests` twice, on a copy of the clone that was then deleted.
+
+| Run | What the copy held | Result |
+|---|---|---|
+| Control | The clone as it is | PASS |
+| Probe | One added line in `PetController.processCreationForm`, after its first frozen call: `result.rejectValue("microchipNumber", "duplicate", "is already in use");` | FAIL |
+
+The probe run's output:
+
+```
+Architecture Violation [Priority: MEDIUM] - Rule 'no classes that are annotated with @Controller should call method where Errors.rejectValue(..), because field validation belongs in the form's Validator (for pets, PetValidator), so the add and edit forms share one rule. Move the check into the validator instead of calling rejectValue in the controller' was violated (1 times):
+Method <org.springframework.samples.petclinic.owner.PetController.processCreationForm(org.springframework.samples.petclinic.owner.Owner, org.springframework.samples.petclinic.owner.Pet, org.springframework.validation.BindingResult, org.springframework.web.servlet.mvc.support.RedirectAttributes)> calls method <org.springframework.validation.BindingResult.rejectValue(java.lang.String, java.lang.String, java.lang.String)> in (PetController.java:127)
+```
+
+Reading: the rule passes today and fails when one call is added to a method that already has frozen calls. A new `rejectValue` call in the controller fails the build.

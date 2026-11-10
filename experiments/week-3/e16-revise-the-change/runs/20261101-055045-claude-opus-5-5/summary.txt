@@ -1,0 +1,60 @@
+  1 shell   find .review-inputs openspec/changes/pc-301 openspec/specs/pets GLOSSARY.md -type f
+  2 shell   grep -n "INSERT IGNORE INTO pets\|INSERT INTO pets" src/main/resources/db/mysql/data.sql src/main/resources/db
+  3 shell   grep -rn "sql.init\|docker" src/main/resources/application.properties src/main/resources/application-mysql.pro
+  4 shell   grep -n -B2 -A3 "testcontainers\|docker-compose\|<artifactId>postgresql" pom.xml
+  5 shell   grep -rn "class \|@Testcontainers\|@SpringBootTest\|DockerClientFactory\|docker\|Compose\|@EnabledIf\|@Disable
+  6 edit    openspec/changes/pc-301/decisions.md
+  7 edit    openspec/changes/pc-301/decisions.md
+  8 edit    openspec/changes/pc-301/decisions.md
+  9 edit    openspec/changes/pc-301/design.md
+ 10 edit    openspec/changes/pc-301/design.md
+ 11 edit    openspec/changes/pc-301/design.md
+ 12 edit    openspec/changes/pc-301/design.md
+ 13 edit    openspec/changes/pc-301/design.md
+ 14 edit    openspec/changes/pc-301/tasks.md
+ 15 edit    openspec/changes/pc-301/tasks.md
+ 16 edit    openspec/changes/pc-301/tasks.md
+ 17 edit    openspec/changes/pc-301/proposal.md
+ 18 edit    openspec/changes/pc-301/proposal.md
+ 19 edit    openspec/changes/pc-301/proposal.md
+ 20 shell   grep -rniE "old code|new code|testcontainers-postgresql|chip number|chip id|transponder" openspec/changes/pc-3
+ 21 shell   openspec validate pc-301 --strict
+ 22 shell   grep -rniEw "old code|new code|testcontainers-postgresql|chip number|chip id|transponder" openspec/changes/pc-
+ 23 edit    openspec/changes/pc-301/design.md
+ 24 edit    openspec/changes/pc-301/design.md
+ 25 shell   openspec validate pc-301 --strict
+ 26 shell   git status --short
+
+--- final answer ---
+I've revised pc-301: both gate answers are recorded as new decisions and carried into the proposal, design and tasks. `openspec validate pc-301 --strict` reports `Change 'pc-301' is valid` (VERIFIED, run after the last edit), but that only checks the format, not the meaning. I edited only files in `openspec/changes/pc-301/`, and neither spec delta changed. `git status` lists the change folder as one untracked directory, so it can't confirm file by file what I touched; that rests on my own record of the edits.
+
+## Gate answers (Decisions)
+
+**G7, two releases (amends D23)**
+- `decisions.md`, "Decided": new **D25**, citing "G7 (review R1) at the gate of 1 November, round 4, answered 2026-11-01". It also records why D23's premise was wrong.
+- `decisions.md`, "Decided": D23's text is kept. An italic note at its start says what D25 changes: the premise, the order of the steps, and that rollback now redeploys release 1.
+- `decisions.md`, "Facts the decisions rest on": new **F12**, the seed inserts by position and the init that runs at every start. VERIFIED: `db/mysql/data.sql:36-48`, `db/h2/data.sql:36-48`, `application-mysql.properties:7`. That MySQL then fails to start is INFERRED, not run.
+- `design.md`, Decision 8: release 1 and release 2 are defined. The deployment now has three steps: release 1, then the script, then release 2. "Rollback from release 2" redeploys release 1 and never the code before it. The line "stays one OpenSpec change" is there too.
+- `design.md`, Risks: the migration-order and seed-insert bullets now refer to the releases.
+- `tasks.md`: a new ordering note, a new section "0. Release 1" with tasks 0.1 and 0.2, and a heading "Release 2" with the deployment and rollback order. The `data.sql` part moved out of task 1.1, and the script comment in task 1.5 now says "after release 1, before release 2".
+- `proposal.md`, What Changes: a new two-releases bullet. In Impact (Data), the column lists are marked as release 1.
+
+**G8, no `testcontainers-postgresql` dependency**
+- `decisions.md`, "Decided": new **D26**, citing "G8 at the gate of 1 November, round 4, answered 2026-11-01".
+- `decisions.md`, "Facts the decisions rest on": new **F13**, how the existing tests start their databases. VERIFIED: `PostgresIntegrationTests.java:51-52,68`, `MySqlIntegrationTests.java:43-49`, `pom.xml:162-186`.
+- `tasks.md`, task 1.5: the dependency is gone. The migration tests now follow the existing MySQL and Postgres tests, and if one can't be written without a new dependency, the coding agent stops and asks.
+- `design.md`, Risks (the "Known gaps (D23)" bullet) and `proposal.md`, Impact (Tests) now say no dependency is added.
+
+## Fixes that need no decision
+The gate lists none, so I made none.
+
+## Left as they are
+R5 to R8 are unchanged. The gate names no known gap with them, so I recorded none. R7's Purpose edit was already in the tasks' "Workflow follow-up".
+
+## Other findings
+- **R1:** acted on, because it follows from D25, as listed above.
+- **R2, R3, R4:** left. The gate sends them to the coding agent in e17 as extra tasks, and neither D25 nor D26 requires them. One thing for e17 about R2: after D25, the "old code" a rollback has to work with is release 1, not the commit before the change. So R2's test should run release 1's `data.sql` against the migrated table. The design labels that claim INFERRED for now.
+
+Two choices of mine beyond the gate's wording that you may want to check:
+- **Task numbering:** I numbered release 1's tasks as "0.x" so that the existing task numbers, which the design and the log refer to, stay the same.
+- **"Rejected" line in D25:** I listed the review's options (b) and (c), the `INVISIBLE` column and editing the old `data.sql` on rollback, as rejected. The gate chose (a) but didn't explicitly reject the others.

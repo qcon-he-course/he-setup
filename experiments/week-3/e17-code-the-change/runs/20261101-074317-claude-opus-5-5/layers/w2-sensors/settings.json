@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          { "type": "command", "command": "/ladder/layers/w2-sensors/protect-sensors.sh" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          { "type": "command", "command": "/ladder/layers/w2-sensors/check-architecture.sh", "timeout": 180 }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "/ladder/layers/w2-sensors/check-architecture.sh", "timeout": 180 }
+        ]
+      }
+    ]
+  }
+}

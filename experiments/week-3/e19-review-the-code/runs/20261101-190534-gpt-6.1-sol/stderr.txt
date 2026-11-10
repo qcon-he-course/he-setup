@@ -1,0 +1,3 @@
+ Container he-week3-run-20261101-190534-gpt-6.1-sol Creating 
+ Container he-week3-run-20261101-190534-gpt-6.1-sol Created 
+Reading additional input from stdin...

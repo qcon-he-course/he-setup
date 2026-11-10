@@ -1,0 +1,60 @@
+{
+  "clean": {
+    "sensor": [],
+    "reviewer": []
+  },
+  "F1": {
+    "sensor": [
+      "PetValidatorTests\\.java:\\d+: assertion removed: assertOnlyMicrochipNumberError"
+    ],
+    "reviewer": [
+      "fourteenDigitsAreRejected",
+      "Fourteen digits are rejected"
+    ]
+  },
+  "F2": {
+    "sensor": [
+      "ArchitectureTests\\.java:\\d+: protected check: modified"
+    ],
+    "reviewer": [
+      "doNotHaveSimpleName",
+      "ArchitectureTests"
+    ]
+  },
+  "F3": {
+    "sensor": [
+      "new dependency org\\.iso\\.animalid:iso11784-validator",
+      "Full test suite[^|]*\\| no summary found"
+    ],
+    "reviewer": [
+      "iso11784",
+      "org\\.iso\\.animalid"
+    ]
+  },
+  "F4": {
+    "sensor": [],
+    "reviewer": [
+      "findOwnerLastNameWithMicrochipNumber",
+      "in use by a pet of",
+      "last ?name",
+      "lastName",
+      "\\bholder"
+    ]
+  },
+  "F5": {
+    "sensor": [],
+    "reviewer": [
+      "PetRepository"
+    ]
+  },
+  "F6": {
+    "sensor": [],
+    "reviewer": [
+      "findOwnerLastNameWithMicrochipNumber",
+      "in use by a pet of",
+      "last ?name",
+      "lastName",
+      "\\bholder"
+    ]
+  }
+}

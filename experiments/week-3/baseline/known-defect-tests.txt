@@ -1,0 +1,11 @@
+# Tests tied to a known defect. Kept by people: the coding agent never sees this file.
+# One test per line: <test class>#<test method> <ticket>. The ticket is a file in
+# this folder (PC-302.md) whose "Status:" line says open. When the ticket closes,
+# the line goes, and the test is back in the build.
+#
+# Step 5 leaves these tests out of the full suite and runs them in a lane of their own,
+# with their whole class, as the suite runs them. Their results go into sensors.md and
+# the packet; they do not decide whether the build passes (plan, 1 November).
+PetClinicConcurrencyTests#twoSimultaneousAddsWithTheSameName PC-302
+# The same test under its name before step 8's base renamed it (e17 to e21 round 2):
+PetClinicConcurrencyTests#testDuplicatePetNameRaceConditionIsBlocked PC-302

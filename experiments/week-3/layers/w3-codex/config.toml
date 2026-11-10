@@ -1,0 +1,23 @@
+# Codex CLI configuration for the Week 3 reviewer (e15 with LADDER_AGENT=codex).
+# demo.sh copies this to the run's CODEX_HOME with AGENTS.md and the skills.
+#
+# Codex's own sandbox (bubblewrap) does not work inside Docker, so it is off and
+# the container is the sandbox. The reviewer's authority comes from the mount:
+# the clone is read-only except target/ (compose.yaml, services reviewer and codex).
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+check_for_update_on_startup = false
+
+[analytics]
+enabled = false
+
+# Tools the Claude reviewers do not have, and the plugin download at start-up
+# (94 MB into CODEX_HOME/.tmp on the first run, 31 October). Off for parity.
+[features]
+plugins = false
+remote_plugin = false
+apps = false
+browser_use = false
+browser_use_external = false
+in_app_browser = false
+computer_use = false

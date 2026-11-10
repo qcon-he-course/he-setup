@@ -1,0 +1,52 @@
+risk floor: critical
+touches: protected-check, persistence, schema, concurrency, production-code, messages, templates, tests, docs
+
+critical    protected-check  src/test/java/org/springframework/samples/petclinic/owner/PetControllerCharacterizationTests.java
+material    concurrency      src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java:321  @Transactional
+material    persistence      src/main/java/org/springframework/samples/petclinic/owner/Pet.java:56  @Column
+material    persistence      src/main/java/org/springframework/samples/petclinic/owner/PetRepository.java:25  public interface PetRepository extends Repository<Pet, Integer> {
+material    schema           src/main/resources/db/h2/data.sql
+material    schema           src/main/resources/db/h2/schema.sql
+material    schema           src/main/resources/db/mysql/data.sql
+material    schema           src/main/resources/db/mysql/migrate-pc-301-microchip-number.sql
+material    schema           src/main/resources/db/mysql/schema.sql
+material    schema           src/main/resources/db/postgres/migrate-pc-301-microchip-number.sql
+material    schema           src/main/resources/db/postgres/schema.sql
+bounded     messages         src/main/resources/messages/messages.properties
+bounded     messages         src/main/resources/messages/messages_de.properties
+bounded     messages         src/main/resources/messages/messages_es.properties
+bounded     messages         src/main/resources/messages/messages_fa.properties
+bounded     messages         src/main/resources/messages/messages_hi.properties
+bounded     messages         src/main/resources/messages/messages_ja.properties
+bounded     messages         src/main/resources/messages/messages_ko.properties
+bounded     messages         src/main/resources/messages/messages_pt.properties
+bounded     messages         src/main/resources/messages/messages_ru.properties
+bounded     messages         src/main/resources/messages/messages_tr.properties
+bounded     production-code  src/main/java/org/springframework/samples/petclinic/owner/Pet.java
+bounded     production-code  src/main/java/org/springframework/samples/petclinic/owner/PetController.java
+bounded     production-code  src/main/java/org/springframework/samples/petclinic/owner/PetRepository.java
+bounded     production-code  src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
+bounded     templates        src/main/resources/templates/owners/ownerDetails.html
+bounded     templates        src/main/resources/templates/pets/createOrUpdatePetForm.html
+bounded     tests            src/test/java/org/springframework/samples/petclinic/MicrochipNumberMigrationScenario.java
+bounded     tests            src/test/java/org/springframework/samples/petclinic/MySqlMicrochipNumberMigrationTests.java
+bounded     tests            src/test/java/org/springframework/samples/petclinic/PetClinicConcurrencyTests.java
+bounded     tests            src/test/java/org/springframework/samples/petclinic/PetMicrochipNumberIntegrationTests.java
+bounded     tests            src/test/java/org/springframework/samples/petclinic/PostgresMicrochipNumberMigrationTests.java
+bounded     tests            src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java
+bounded     tests            src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java
+bounded     tests            src/test/java/org/springframework/samples/petclinic/owner/PetTests.java
+bounded     tests            src/test/java/org/springframework/samples/petclinic/owner/PetValidatorTests.java
+bounded     tests            src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java
+bounded     tests            src/test/resources/pc-301-release-1/mysql/data.sql
+bounded     tests            src/test/resources/pc-301-release-1/mysql/schema.sql
+bounded     tests            src/test/resources/pc-301-release-1/postgres/data.sql
+bounded     tests            src/test/resources/pc-301-release-1/postgres/schema.sql
+mechanical  docs             GLOSSARY.md
+mechanical  docs             openspec/changes/pc-301/decisions.md
+mechanical  docs             openspec/changes/pc-301/design.md
+mechanical  docs             openspec/changes/pc-301/proposal.md
+mechanical  docs             openspec/changes/pc-301/specs/owner-details/spec.md
+mechanical  docs             openspec/changes/pc-301/specs/pets/spec.md
+mechanical  docs             openspec/changes/pc-301/tasks.md
+mechanical  docs             openspec/specs/pets/spec.md

@@ -1,0 +1,9 @@
+services:
+  author:
+    volumes:
+      - "~/.cache/qcon-he/week3/petclinic/src/checkstyle/nohttp-checkstyle-suppressions.xml:/work/src/checkstyle/nohttp-checkstyle-suppressions.xml:ro"
+      - "~/.cache/qcon-he/week3/petclinic/src/checkstyle/nohttp-checkstyle.xml:/work/src/checkstyle/nohttp-checkstyle.xml:ro"
+      - "~/.cache/qcon-he/week3/petclinic/src/test/java/org/springframework/samples/petclinic/ArchitectureTests.java:/work/src/test/java/org/springframework/samples/petclinic/ArchitectureTests.java:ro"
+      - "~/.cache/qcon-he/week3/petclinic/src/test/resources/archunit.properties:/work/src/test/resources/archunit.properties:ro"
+      - "~/.cache/qcon-he/week3/petclinic/src/test/resources/archunit_store/1cbfc1d1-c4c3-4fdb-b562-260ce0bb3bc5:/work/src/test/resources/archunit_store/1cbfc1d1-c4c3-4fdb-b562-260ce0bb3bc5:ro"
+      - "~/.cache/qcon-he/week3/petclinic/src/test/resources/archunit_store/stored.rules:/work/src/test/resources/archunit_store/stored.rules:ro"

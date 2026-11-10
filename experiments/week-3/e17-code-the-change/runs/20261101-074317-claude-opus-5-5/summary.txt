@@ -1,0 +1,206 @@
+  1 skill   openspec-apply-change
+  2 shell   openspec status --change "pc-301" --json
+  3 shell   openspec instructions apply --change "pc-301" --json
+  4 shell   git ls-files src openspec pom.xml
+  5 shell   ./mvnw test -q > /tmp/baseline.log 2>&1; echo exit=$? >> /tmp/baseline.log
+  6 shell   ./mvnw test
+  7 shell   git ls-files --others --exclude-standard
+  8 shell   ls /work
+  9 shell   grep -n -A3 "artifactId" pom.xml
+ 10 shell   grep -E "Tests run:|BUILD|ERROR|FAIL" /tmp/claude-1000/-work/0b5af0d6-8dac-4295-84c5-2369addc450c/tasks/be37h7
+ 11 edit    src/main/resources/db/h2/data.sql
+ 12 edit    src/main/resources/db/mysql/data.sql
+ 13 shell   ./mvnw test
+ 14 shell   git status --short
+ 15 shell   grep -n -E "^(duplicate|telephone.invalid|birthDate|type)=" src/main/resources/messages/messages_de.properties
+ 16 shell   grep -E "Tests run:.*(Postgres|MySql)|Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+, Skipped: [0-9]+$|BU
+ 17 edit    openspec/changes/pc-301/tasks.md
+ 18 edit    src/main/resources/db/h2/schema.sql
+ 19 edit    src/main/resources/db/mysql/schema.sql
+ 20 edit    src/main/resources/db/postgres/schema.sql
+ 21 shell   ./mvnw test -Dtest=ClinicServiceTests
+ 22 edit    openspec/changes/pc-301/tasks.md
+ 23 edit    src/main/java/org/springframework/samples/petclinic/owner/Pet.java
+ 24 edit    src/main/java/org/springframework/samples/petclinic/owner/Pet.java
+ 25 edit    src/test/java/org/springframework/samples/petclinic/owner/PetTests.java
+ 26 shell   ./mvnw test -Dtest=PetTests | grep -E "Tests run:|BUILD|ERROR|FAIL"
+ 27 edit    openspec/changes/pc-301/tasks.md
+ 28 edit    src/main/java/org/springframework/samples/petclinic/owner/PetRepository.java
+ 29 edit    src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java
+ 30 edit    src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java
+ 31 edit    src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java
+ 32 edit    src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java
+ 33 shell   ./mvnw spring-javaformat:apply -q
+ 34 shell   ./mvnw test -Dtest=ClinicServiceTests | grep -E "Tests run:|BUILD|ERROR|FAIL|expected|Expect"
+ 35 edit    src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java
+ 36 shell   ./mvnw spring-javaformat:apply -q
+ 37 shell   ./mvnw test -Dtest=ClinicServiceTests | grep -E "Tests run:|BUILD|ERROR|FAIL|expected|Expect|UNIQUE_PET"
+ 38 edit    openspec/changes/pc-301/tasks.md
+ 39 edit    openspec/changes/pc-301/tasks.md
+ 40 edit    src/main/resources/db/mysql/migrate-pc-301-microchip-number.sql
+ 41 edit    src/main/resources/db/postgres/migrate-pc-301-microchip-number.sql
+ 42 shell   git show HEAD:src/main/resources/db/mysql/schema.sql
+ 43 shell   git show HEAD:src/main/resources/db/postgres/schema.sql
+ 44 edit    src/test/resources/pc-301-release-1/mysql/schema.sql
+ 45 edit    src/test/resources/pc-301-release-1/mysql/data.sql
+ 46 edit    src/test/resources/pc-301-release-1/postgres/schema.sql
+ 47 edit    src/test/resources/pc-301-release-1/postgres/data.sql
+ 48 shell   git diff --no-index --stat src/main/resources/db/postgres/data.sql src/test/resources/pc-301-release-1/postgre
+ 49 shell   git diff --no-index --stat src/main/resources/db/mysql/data.sql src/test/resources/pc-301-release-1/mysql/data
+ 50 edit    src/test/resources/pc-301-release-1/postgres/data.sql
+ 51 shell   git diff --no-index --stat HEAD:src/main/resources/db/mysql/schema.sql src/test/resources/pc-301-release-1/mys
+ 52 edit    src/test/resources/pc-301-release-1/postgres/data.sql
+ 53 shell   git diff --no-index --stat src/main/resources/db/postgres/data.sql src/test/resources/pc-301-release-1/postgre
+ 54 edit    src/test/resources/pc-301-release-1/postgres/data.sql
+ 55 shell   git diff --no-index --stat src/main/resources/db/postgres/data.sql src/test/resources/pc-301-release-1/postgre
+ 56 edit    src/test/java/org/springframework/samples/petclinic/MicrochipNumberMigrationScenario.java
+ 57 edit    src/test/java/org/springframework/samples/petclinic/MySqlMicrochipNumberMigrationTests.java
+ 58 edit    src/test/java/org/springframework/samples/petclinic/PostgresMicrochipNumberMigrationTests.java
+ 59 shell   ./mvnw spring-javaformat:apply -q
+ 60 shell   ./mvnw test -Dtest=MySqlMicrochipNumberMigrationTests,PostgresMicrochipNumberMigrationTests | grep -E "Tests r
+ 61 edit    src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
+ 62 edit    src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
+ 63 edit    src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
+ 64 edit    src/main/java/org/springframework/samples/petclinic/owner/PetController.java
+ 65 edit    src/main/java/org/springframework/samples/petclinic/owner/PetController.java
+ 66 edit    src/test/java/org/springframework/samples/petclinic/owner/PetValidatorTests.java
+ 67 shell   ./mvnw spring-javaformat:apply -q
+ 68 shell   ./mvnw test -Dtest='PetValidatorTests*' | grep -E "Tests run:|BUILD|ERROR\]|FAIL|expected"
+ 69 edit    openspec/changes/pc-301/tasks.md
+ 70 edit    openspec/changes/pc-301/tasks.md
+ 71 shell   tail -n 3 src/main/resources/messages/messages_de.properties src/main/resources/messages/messages_es.propertie
+ 72 edit    src/main/resources/messages/messages.properties
+ 73 edit    src/main/resources/messages/messages_de.properties
+ 74 edit    src/main/resources/messages/messages_es.properties
+ 75 edit    src/main/resources/messages/messages_fa.properties
+ 76 edit    src/main/resources/messages/messages_hi.properties
+ 77 edit    src/main/resources/messages/messages_ja.properties
+ 78 edit    src/main/resources/messages/messages_ko.properties
+ 79 edit    src/main/resources/messages/messages_pt.properties
+ 80 edit    src/main/resources/messages/messages_ru.properties
+ 81 edit    src/main/resources/messages/messages_tr.properties
+ 82 shell   tail -n 3 src/main/resources/messages/messages_hi.properties
+ 83 shell   ./mvnw test -Dtest=I18nPropertiesSyncTest | grep -E "Tests run:|BUILD|ERROR\]|FAIL|Missing"
+ 84 edit    openspec/changes/pc-301/tasks.md
+ 85 edit    src/test/java/org/springframework/samples/petclinic/owner/PetControllerCharacterizationTests.java
+ 86 edit    src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java
+ 87 shell   ./mvnw test -Dtest='PetControllerTests*,PetControllerCharacterizationTests' | grep -E "Tests run:|BUILD|ERROR\
+ 88 shell   git diff src/test/java/org/springframework/samples/petclinic/owner/PetControllerCharacterizationTests.java
+ 89 edit    openspec/changes/pc-301/tasks.md
+ 90 edit    src/main/java/org/springframework/samples/petclinic/owner/PetController.java
+ 91 edit    src/main/resources/templates/pets/createOrUpdatePetForm.html
+ 92 edit    src/main/java/org/springframework/samples/petclinic/owner/PetController.java
+ 93 edit    src/main/java/org/springframework/samples/petclinic/owner/PetController.java
+ 94 edit    src/main/java/org/springframework/samples/petclinic/owner/PetController.java
+ 95 edit    src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java
+ 96 edit    src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java
+ 97 edit    src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java
+ 98 shell   ./mvnw spring-javaformat:apply -q
+ 99 shell   ./mvnw test -Dtest='PetControllerTests*,PetControllerCharacterizationTests' | grep -E "Tests run:|BUILD|ERROR\
+100 edit    src/main/java/org/springframework/samples/petclinic/owner/PetController.java
+101 shell   ./mvnw test -Dtest='PetControllerTests$MicrochipNumber' | grep -E "Tests run:|\[ERROR\]   PetControllerTests|B
+102 edit    src/main/java/org/springframework/samples/petclinic/owner/PetController.java
+103 shell   git diff src/main/java/org/springframework/samples/petclinic/owner/PetController.java
+104 shell   ./mvnw test -Dtest=I18nPropertiesSyncTest,ArchitectureTests | grep -E "Tests run:|BUILD|ERROR\]|FAIL|violated"
+105 shell   git status --short src/test/resources/archunit_store src/test/resources/archunit.properties src/checkstyle src
+106 edit    openspec/changes/pc-301/tasks.md
+107 edit    openspec/changes/pc-301/tasks.md
+108 edit    openspec/changes/pc-301/tasks.md
+109 shell   find /home/node/.m2/repository/org/springframework/boot -name "spring-boot-webmvc-test-*.jar" -not -name "*sou
+110 edit    src/test/java/org/springframework/samples/petclinic/PetMicrochipNumberIntegrationTests.java
+111 shell   ./mvnw spring-javaformat:apply -q
+112 shell   ./mvnw test -Dtest=PetMicrochipNumberIntegrationTests | grep -E "Tests run:|BUILD|ERROR\]|FAIL|Expected|expect
+113 edit    openspec/changes/pc-301/tasks.md
+114 edit    openspec/changes/pc-301/tasks.md
+115 edit    src/test/java/org/springframework/samples/petclinic/PetClinicConcurrencyTests.java
+116 edit    src/test/java/org/springframework/samples/petclinic/PetClinicConcurrencyTests.java
+117 shell   grep -n "interface\|fetch" src/main/java/org/springframework/samples/petclinic/owner/OwnerRepository.java src/
+118 shell   ./mvnw spring-javaformat:apply -q
+119 shell   ./mvnw test -Dtest=PetClinicConcurrencyTests | grep -E "Tests run:|BUILD|ERROR\]|FAIL|Expect|expected|UNIQUE_P
+120 edit    openspec/changes/pc-301/tasks.md
+121 edit    openspec/changes/pc-301/tasks.md
+122 edit    src/main/resources/templates/owners/ownerDetails.html
+123 edit    src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java
+124 edit    src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java
+125 shell   ./mvnw spring-javaformat:apply -q
+126 shell   ./mvnw test -Dtest=OwnerControllerTests,I18nPropertiesSyncTest | grep -E "Tests run:|BUILD|ERROR\]|FAIL|Expect
+127 edit    openspec/changes/pc-301/tasks.md
+128 shell   ./mvnw spring-javaformat:apply -q
+129 shell   ./mvnw test
+130 shell   openspec validate pc-301 --strict
+131 edit    openspec/changes/pc-301/tasks.md
+132 edit    openspec/changes/pc-301/tasks.md
+133 shell   openspec validate --help
+134 shell   grep -E "Tests run:|BUILD|ERROR\]|FAIL" /tmp/claude-1000/-work/0b5af0d6-8dac-4295-84c5-2369addc450c/tasks/bg8o
+135 shell   grep -n -E "Successful additions|Failed additions|Original Pet Count|Final Pet Count|expected|Expect|but was" 
+136 shell   ./mvnw test -Dtest=PetClinicConcurrencyTests | grep -E "Tests run:|Successful additions|Failed additions|Final
+137 shell   ./mvnw test -Dtest=PetClinicConcurrencyTests | grep -E "Tests run:|Successful additions|Failed additions|Final
+138 shell   ./mvnw test -Dtest=PetClinicConcurrencyTests | grep -E "Tests run:|Successful additions|Failed additions|Final
+139 shell   ./mvnw test -Dtest=PetClinicConcurrencyTests#testDuplicatePetNameRaceConditionIsBlocked | grep -E "Tests run:|
+140 shell   ./mvnw test -Dtest=PetClinicConcurrencyTests#testDuplicatePetNameRaceConditionIsBlocked | grep -E "Tests run:|
+141 shell   ./mvnw test -Dtest=PetClinicConcurrencyTests#testDuplicatePetNameRaceConditionIsBlocked | grep -E "Tests run:|
+142 shell   ./mvnw test -Dtest=PetClinicConcurrencyTests -Dspring.jpa.show-sql=true | grep -E "^Hibernate: (insert|update|
+143 shell   ./mvnw test
+144 shell   git status --short
+145 shell   openspec instructions apply --change "pc-301" --json | grep -E '"(total|complete|remaining|state)"'
+146 shell   grep -E "Tests run:.*(Postgres|MySql|Concurrency)|Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+, Skipped
+
+--- final answer ---
+## pc-301: 18 of 21 tasks done; 3 are open, and the build is not reliably green
+
+I implemented the microchip number through to the owner's page, and did H1–H6 under their tasks. The full suite does not pass reliably. The existing test `PetClinicConcurrencyTests.testDuplicatePetNameRaceConditionIsBlocked` fails intermittently since my new race test was added next to it. The cause is a race in the existing pet-name code, not in the microchip code (details under task 6.1).
+
+### Tasks left open
+- **0.2 (merge and release release 1 on its own):** this is a release step I can't do from here. Release 1 is only the two `data.sql` files. Nothing is committed: everything sits in one working tree, so release 1 has to be split out before anything is merged.
+- **1.5 (migration scripts and tests):** the scripts and both tests are written and compile. Its check is "with Docker, both tests pass", and there is no Docker here. `MySqlMicrochipNumberMigrationTests` was skipped and `PostgresMicrochipNumberMigrationTests` ran 0 tests. Both are **not run**, not passed. They do what H3 and H6 ask: plain JDBC or `spring.sql.init.mode=never`, a check that the column is absent before the script, and release 1's scripts run again afterwards.
+- **6.1 (full build passes):** blocked by the failure below.
+  - **The failure:** across the runs I made, the name race test failed 3 of 4 times when run after my microchip race test, and passed 3 of 3 times on its own.
+  - **What the SQL log shows:** the second name request runs `update pets set owner_id=null where owner_id=? and id=?`. Because `saveAndFlush` merges an owner whose pet list was loaded before the other request committed, it detaches the first request's pet. The `(owner_id, name)` constraint never fires, so both requests succeed and only one pet stays with the owner.
+  - **Why it shows only now:** I think (not checked) that the name test used to pass because its first request was slowed by cold-start setup. My test warms up the shared context first.
+  - **What it would take:** fixing it means changing how the controller saves the owner, which no task or decision covers. Moving or reordering the tests would only hide it. **Someone needs to decide** whether to open a ticket for the name race, or accept the test as flaky in the meantime.
+
+### Self-review
+**1. Full `./mvnw test` (final run):** 154 tests, 0 failures, 0 errors, 3 skipped, BUILD SUCCESS. The run before it had 1 failure, the name race test above, so this pass is not reliable.
+- **Skipped or not run because there is no Docker:** MySqlIntegrationTests (2 skipped), MySqlMicrochipNumberMigrationTests (1 skipped), PostgresIntegrationTests and PostgresMicrochipNumberMigrationTests (0 run). None of these count as passed.
+- **Baseline before any change:** 110 tests, 0 failures, 2 skipped, with the same Docker skips.
+- **Other checks:** `openspec validate pc-301 --strict` reports the change as valid. ArchitectureTests passes, and the freeze store and other protected checks are unchanged (`git status` shows nothing there).
+
+**2. Scenario → test**
+
+| Scenario | Test |
+|---|---|
+| Added without a number | `PetControllerTests$MicrochipNumber.addWithoutMicrochipNumberSavesNoneAndDoesNotQuery` |
+| Blank counts as none | `addWithBlankMicrochipNumberSavesNone`, `PetTests.blankMicrochipNumberBecomesNone` |
+| Two pets without a number | `ClinicServiceTests.shouldSaveTwoPetsWithoutMicrochipNumber` |
+| Spaces are removed | `addRemovesSpacesFromMicrochipNumber`, `PetTests` |
+| Dashes are not removed | `addWithDashedNumberIsRejectedAndNotSaved` |
+| Fifteen digits are accepted | Add form: `addAcceptsFifteenDigits`. Edit form: `editReplacesStoredNumberOnOwnersPet`, `PetMicrochipNumberIntegrationTests` |
+| Any first three digits / 14 digits / 16 digits / 10-character number | Validator level only: `PetValidatorTests$MicrochipNumber`. **No form-level test** shows "nothing is saved" for these exact values, and none covers the edit form. |
+| Number held by another owner's pet | `addWithNumberOfAnotherOwnersPetShowsOnlyIsAlreadyInUse`. It runs on a mocked repository, so "names no other pet" holds by construction: the query returns only a yes/no. |
+| Editing to another pet's number | `editToAnotherPetsNumberIsRejected` |
+| Saving with its own number | `editSavingPetWithItsOwnNumberIsAccepted`, `PetValidatorTests.ownNumberIsAcceptedForExistingPet`, `ClinicServiceTests.shouldFindMicrochipNumberOfAnotherPetButNotOfThePetItself` |
+| New number replaces the stored one / field cleared / malformed new number rejected | `editReplacesStoredNumberOnOwnersPet`, `editWithEmptyFieldRemovesStoredNumberFromOwnersPet`, and `PetMicrochipNumberIntegrationTests` against H2 |
+| Edit form with a number / without one | `editFormShowsStoredMicrochipNumber`, `editFormForPetWithoutNumberShowsEmptyField` |
+| Malformed number not checked for duplicates / duplicate gets only the duplicate error | `PetValidatorTests.malformedNumberNeverReachesRepositoryAndGetsOneError`, `numberOfAnotherPetIsRejectedForNewPet` |
+| Two simultaneous adds (microchip) | `PetClinicConcurrencyTests.testDuplicateMicrochipNumberRaceConditionShowsFormAgain` |
+| Microchip constraint reported as a duplicate microchip number | `create…`/`editMicrochipConstraintIsReportedOnMicrochipNumber`. H2's real message: `ClinicServiceTests.shouldFailToInsertDuplicateMicrochipNumberForDifferentOwners` |
+| Name constraint still reported on the name | `create…`/`editNameConstraintIsStillReportedOnNameOnly` |
+| Another integrity violation | `PetControllerCharacterizationTests.create…`/`editOtherIntegrityViolationIsRethrown` |
+| Two simultaneous adds (name) | `testDuplicatePetNameRaceConditionIsBlocked`, which is flaky (see 6.1) |
+| Name constraint reported as a duplicate name | Existing `…UniqueViolationMessageMatchedCaseInsensitively` tests |
+| Three errors on the add form / two errors on the edit form (baseline versions) | **None matches exactly.** The closest are `createReportsDuplicateNameAndFutureBirthDateTogether` and `createReportsEveryValidatorErrorAtOnce`. |
+| Three / two errors, one on the microchip number | `addReportsThreeErrorsOneOnMicrochipNumber`, `editReportsTwoErrorsOneOnMicrochipNumber` |
+| Owner's page with a number / without one | `OwnerControllerTests.showOwnerShowsPetsMicrochipNumber`, `showOwnerShowsEmptyMicrochipNumberForPetWithoutOne` (with the pet "Max" rather than "petty") |
+
+**3. What I was unsure of, and work beyond the tasks**
+- **H4 "say so in the code's design":** I put the explanation in a comment in `PetValidator` and did not edit `design.md`, which is a settled input.
+- **H1:** I checked that the edit tests can fail by removing the copy line in `updatePetDetails` and rerunning. "Replaces" and "cleared" failed. The own-number test kept passing, because it is sensitive to which query runs, not to the copy. I then restored the line.
+- **H2:** I added a check line under the Workflow follow-up in `tasks.md` (`openspec validate --specs --strict` exists; I checked `--help`).
+- **Release 1 copies (for H3):** release 1's `schema.sql` and `data.sql` are stored as test resources under `src/test/resources/pc-301-release-1/`. The Postgres `data.sql` copy is missing one trailing space on line 9, because the editing tool trims it. It makes no difference to the SQL.
+- **Approved change:** `PetControllerCharacterizationTests.java` gained only the `@MockitoBean PetRepository pets;` field. `git diff` confirms it, and no import was needed.
+- **Beyond the tasks:**
+  - a shared helper, `MicrochipNumberMigrationScenario`, used by both migration tests;
+  - a test for a `null` microchip number in `PetTests`;
+  - the form label uses the new `#{microchipNumber}` message rather than a literal, like the owner's page;
+  - the translations in the nine locale files are mine and need review by a speaker, as the design notes.
+- **Not verified (inferred):** the migration scripts and both migration tests have never run against a real MySQL or Postgres.

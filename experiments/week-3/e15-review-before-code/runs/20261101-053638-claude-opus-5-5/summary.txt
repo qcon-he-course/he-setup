@@ -1,0 +1,133 @@
+  1 skill   review-change
+  2 shell   find openspec GLOSSARY.md -type f
+  3 shell   find src/test/java/org/springframework/samples/petclinic src/test/resources src/main/java/org/springframework/
+  4 shell   grep -rn "" src/main/resources/application.properties src/main/resources/application-mysql.properties src/main
+  5 shell   docker version
+  6 shell   openspec validate pc-301 --strict
+  7 shell   grep -rn "new PetValidator\|testcontainers\|disabledWithoutDocker\|EnabledIf\|DisabledIf" src/test pom.xml
+  8 shell   grep -n "void \|DataIntegrityViolation\|MockitoBean" src/test/java/org/springframework/samples/petclinic/owner
+  9 shell   grep -rniE "chip number|chip id|transponder" openspec/changes/pc-301
+ 10 shell   grep -rn "duplicate=\|telephone.invalid\|^required\|typeMismatch.birthDate" src/main/resources/messages/messag
+ 11 shell   grep -rniEw "chip number|chip id|chip ids|chip numbers|transponder|transponders|chip|chips" openspec/changes/p
+ 12 shell   grep -rniE "delete|remove" src/main/java/org/springframework/samples/petclinic/owner
+ 13 shell   grep -rn "mysql:\|postgres:" src/test/java docker-compose.yml compose.yaml
+
+--- final answer ---
+I found one blocking problem: the migration plan's rollback fails on MySQL. There are also three test or spec gaps a person can fix mechanically, and four informational notes. `openspec validate pc-301 --strict` reports `Change 'pc-301' is valid`, but that only checks the format, not the meaning. I couldn't use Docker (the Bash call was denied), so nothing about MySQL or Postgres behaviour was run. Those claims are labelled INFERRED.
+
+## 1. Decisions
+
+| Decision | Verdict | Where |
+|---|---|---|
+| D1 term | CARRIED | Proposal, design, spec and tasks avoid "chip number", "chip ID" and "transponder" (whole-word grep: only hits are in `decisions.md:7,9,34`, where D1 names the banned words and "chips" means the devices) |
+| D2 optional | CARRIED | spec "Microchip number is optional"; task 2.1 |
+| D3 15 digits, ISO only | CARRIED | spec "exactly 15 digits", scenario "A 10-character non-ISO number is rejected" |
+| D4 unique across owners | CARRIED | spec "unique across all pets", scenario "A number held by another owner's pet" |
+| D5 no lookup | CARRIED | proposal:5,19; design Non-Goals |
+| D6 owner's page | CARRIED | `specs/owner-details/spec.md`; task 5.1 |
+| D7 change number | CARRIED | spec "A pet's microchip number can be changed" |
+| D8 empty clears, form shows stored | CARRIED | spec "Clearing…" and "The edit form shows the stored microchip number"; design 6 |
+| D9 trim, remove spaces | CARRIED | spec "stored as its digits"; design 2 |
+| D10 messages | CARRIED | design 3, design 4; spec scenarios |
+| D11 no details of the other pet | CARRIED | spec "unique across all pets"; task 3.4 |
+| D12 named constraint on 3 DBs | CARRIED | design 5 (on Postgres it is a unique index, as D23 allows) |
+| D13 MySQL name constraint not fixed | CARRIED | design Non-Goals |
+| D14 own number | CARRIED | spec "A pet keeps its own microchip number"; design 4 (two queries) |
+| D15 no prefix check | CARRIED | design 3 |
+| D16 empty value under the label | CARRIED | owner-details scenario "A pet without a microchip number" |
+| D17 one error per field, reported with the others | CARRIED | spec "One microchip number error at a time"; MODIFIED "Validation errors are reported together" |
+| D18 placement is a design call | CARRIED | design 4 |
+| D19 validator method called from `catch` | CARRIED | design 5; tasks 4.1, 4.3 |
+| D20 | Replaced by D23 | — |
+| D21 H2 add/edit/clear test | CARRIED | task 3.5 |
+| D22 accepted wrong-pet case | CARRIED | proposal:23; design Risks |
+| D23 migration | CARRIED in text, but its premise is wrong on MySQL | design 8. D23 says "the old code keeps working against the new table because it never names the column". On MySQL that is false (R1). |
+| D24 no visit form | CARRIED | design Non-Goals; tasks follow-up |
+
+**Added scope:** none that isn't needed.
+- The `owner-details` capability (D6), the message keys (the sync test requires them), the `data.sql` column lists (positional inserts) and the `testcontainers-postgresql` dependency (D23's tests) all follow from a decision or the code.
+- The seed-insert fix is correct for new databases (VERIFIED: `db/h2/data.sql:36-48`, `db/mysql/data.sql:36-48` insert by position; `db/postgres/data.sql:36-48` names its columns).
+
+**Open section:** "None on PC-301's frontier". The follow-ups are listed in tasks.md (Workflow follow-up). The ticket raises no question that the log and the change leave unanswered: the "scanned" use is D5, "two pets" is D4, and there is no pet deletion (VERIFIED: grep for `delete|remove` in `owner/` finds nothing).
+
+## 2. Findings
+
+**R1: BLOCK.** Where: design Decision 8, "Rollback" step 1 and "Deployment" step 1; D23.
+- **Claim:** On MySQL, the old code cannot start against a migrated `pets` table. The old `data.sql` inserts pets by position with 5 values, the migrated table has 6 columns, and init runs on every start with no `continue-on-error`. So "redeploy the old code" (rollback) fails, and so does any restart of old instances between step 1 and step 2. Postgres is not affected.
+- **Evidence:**
+  - VERIFIED: `db/mysql/data.sql:36` `INSERT IGNORE INTO pets VALUES (1, 'Leo', '2000-09-07', 1, 1);`
+  - VERIFIED: `application-mysql.properties:7` `spring.sql.init.mode=always`. No `spring.sql.init.continue-on-error` in that file or in `application.properties`.
+  - VERIFIED: design:114 says "The old code keeps working against the new table because it never names the column".
+  - VERIFIED: Postgres's old `data.sql` names its columns (`db/postgres/data.sql:36`).
+  - INFERRED, not run: MySQL raises error 1136, "Column count doesn't match value count", and `IGNORE` does not suppress it. That would make startup fail.
+- **Falsification:** This finding is wrong if MySQL 9.7 accepts a 5-value positional `INSERT IGNORE` into a 6-column table, or if something else sets `continue-on-error=true`.
+- **Confidence:** medium-high.
+
+**R2: AUTO-FIX+REVERIFY.** Where: task 1.5.
+- **Claim:** The migration test runs the *new* `schema.sql` on the migrated database, but never the *old* `schema.sql` and `data.sql`. So nothing checks D23's "old code keeps working" claim, the very assumption R1 breaks.
+- **Evidence:** tasks.md:11, "Finally it runs the new `schema.sql` against the migrated database". There is no step for the old scripts.
+- **Fix:** After migrating, run the old commit's `schema.sql` and `data.sql` too, and assert they succeed.
+- **Falsification:** This finding is wrong if some other task runs the old init scripts against a migrated table.
+- **Confidence:** high.
+
+**R3: AUTO-FIX+REVERIFY.** Where: design Decision 4; task 2.1.
+- **Claim:** The design doesn't say the uniqueness query is skipped when there is no number. A Spring Data derived `existsByMicrochipNumber(null)` turns into `IS NULL`, so it would find any pet without a number and reject a second pet without one as a duplicate.
+- **Why tests could miss it:** Task 2.1's "no number accepted" uses a mocked repository, which returns `false` by default, so that test would pass with the bug. Indirect coverage exists: all seeded H2 pets have no number, so task 3.5's clear step and the existing `PetClinicConcurrencyTests` would probably fail. That coverage is accidental, not designed.
+- **Evidence:**
+  - VERIFIED: design:55 says "runs only when the format check passes". It doesn't say whether an absent number "passes".
+  - INFERRED: Spring Data JPA turns a null argument into `IS NULL`.
+- **Fix:** In design 4, state that the query is skipped for `null`. In 2.1, add a check that the repository is never called (`verifyNoInteractions(petRepository)`) when there is no number.
+- **Falsification:** This finding is wrong if derived `exists…` queries reject null arguments instead of matching `IS NULL`.
+- **Confidence:** medium.
+
+**R4: AUTO-FIX+REVERIFY.** Where: task 4.1.
+- **Claim:** Task 4.1 names only the add handler's regression test. The edit handler's `catch` also gets the microchip branch (design:72), but no task checks the constraint on the edit path, or its "other violation is rethrown" case.
+- **Evidence:** tasks.md:33 says "`createOtherIntegrityViolationIsRethrown` still passes". `editOtherIntegrityViolationIsRethrown` exists at `PetControllerCharacterizationTests.java:454` and isn't mentioned.
+- **Fix:** Run both scenarios against both handlers.
+- **Falsification:** This finding is wrong if "New PetControllerTests cases" is meant to cover both handlers and a check confirms it.
+- **Confidence:** medium.
+
+**R5: INFORMATIONAL.** Where: design:106-107.
+- **Claim:** The Postgres script can be re-run (`IF NOT EXISTS`); the MySQL one can't (`ADD COLUMN` with no guard). Running the MySQL script a second time fails loudly at its first statement and changes nothing, so the risk is low.
+- **Evidence:** design:106 vs design:107.
+- **Falsification:** This finding is wrong if the MySQL script is meant to be re-runnable.
+- **Confidence:** high.
+
+**R6: INFORMATIONAL.** Where: design:7, design:76; F11.
+- **Claim:** The design's freeze-store claim, labelled "not re-run here", is now confirmed. Adding one `rejectValue` to a controller fails the build, and D19's route (no new controller call) keeps the frozen counts.
+- **Evidence:**
+  - The harness probe: control PASS; the probe run FAILs with "was violated (1 times)" at `PetController.java:127`.
+  - VERIFIED: the store records the calls at lines 112, 132, 149 and 163, but the code has them at 111, 126, 143 and 157, and the control still passes. So matching ignores line numbers.
+- **Falsification:** This finding is wrong if the control run failed.
+- **Confidence:** high.
+
+**R7: INFORMATIONAL.** Where: baseline `pets` Purpose.
+- **Claim:** The baseline says it doesn't cover the GET forms, but the change adds a GET-form requirement. The change postpones the Purpose edit to archive time.
+- **Evidence:** `openspec/specs/pets/spec.md:5`; tasks.md:48.
+- **Falsification:** This finding is wrong if OpenSpec deltas can modify Purpose.
+- **Confidence:** high.
+
+**R8: INFORMATIONAL.** Where: design INFERRED claims.
+- **Claim:** Each design claim labelled INFERRED has a task that checks it:
+  - NULLs are allowed by a unique constraint: tasks 1.3 and 1.5.
+  - Thymeleaf renders a null as an empty value: task 5.1.
+  - The edited pet is detached, so the uniqueness query can't flush half-edited values: task 3.5. The risk is real: `editRejectedFormHasAlreadyBoundValuesOntoOwnersPet` (`PetControllerCharacterizationTests.java:406-416`) shows binding writes onto the loaded pet.
+  - Postgres's `IF NOT EXISTS` finds the index the script made: task 1.5.
+  - H2's error message names the constraint: task 1.4.
+- **Caveat:** the MySQL and Postgres checks are skipped without Docker, as D23 records.
+- **Falsification:** This finding is wrong if any of those tasks can't observe the claim.
+- **Confidence:** medium.
+
+The delta against the baseline is consistent. The two baseline requirements that the microchip number changes ("Duplicate names caught by the database", "Validation errors are reported together") are MODIFIED with all their scenarios kept. The other baseline requirements are not contradicted. Every requirement has a task with a check.
+
+## 3. For the person
+
+1. **R1: How should MySQL get from the old code to the new one, given that the old code can't restart on a migrated table?**
+   - **Evidence:** `db/mysql/data.sql:36-48` inserts by position; `spring.sql.init.mode=always` (`application-mysql.properties:7`); design:114 and 119 rely on the old code working against the new table.
+   - **Options:**
+     - (a) **Two releases.** First ship only the column lists in `data.sql`, which work on the old table. Then run the migration, then ship the microchip number.
+     - (b) **An `INVISIBLE` column.** Add the MySQL column as `INVISIBLE` (supported by the `mysql:9.7` image in `docker-compose.yml:3`). Positional inserts skip invisible columns, and Hibernate names its columns. This is INFERRED and should be checked by R2's test.
+     - (c) **Accept the limit.** Accept that rollback on MySQL means editing the old `data.sql` too, and say so in D23.
+   - **My recommendation:** (a) is the simplest and doesn't depend on MySQL features. Whichever you choose, D23 needs an amendment, because its stated reason ("never names the column") is wrong for MySQL.
+
+R2–R4 are mechanical once R1 is settled, and none of the findings is DISCUSS.

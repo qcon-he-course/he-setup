@@ -1,0 +1,17 @@
+[ERROR] /work/.git/.probe-b624fd59-cd21-47ec-ab65-eba942387cfa
+java.nio.file.AccessDeniedException: /work/.git/.probe-b624fd59-cd21-47ec-ab65-eba942387cfa
+    at sun.nio.fs.UnixException.translateToIOException (UnixException.java:90)
+    at sun.nio.fs.UnixException.rethrowAsIOException (UnixException.java:106)
+    at sun.nio.fs.UnixException.rethrowAsIOException (UnixException.java:111)
+    at sun.nio.fs.UnixFileSystemProvider.newByteChannel (UnixFileSystemProvider.java:218)
+    at java.nio.file.spi.FileSystemProvider.newOutputStream (FileSystemProvider.java:484)
+    at java.nio.file.Files.newOutputStream (Files.java:228)
+    at org.eclipse.jgit.util.FS$FileStoreAttributes.write (FS.java:555)
+    at org.eclipse.jgit.util.FS$FileStoreAttributes.measureMinimalRacyInterval (FS.java:511)
+    at org.eclipse.jgit.util.FS$FileStoreAttributes.lambda$3 (FS.java:450)
+    at java.util.concurrent.CompletableFuture$AsyncSupply.run (CompletableFuture.java:1768)
+    at java.util.concurrent.ThreadPoolExecutor.runWorker (ThreadPoolExecutor.java:1136)
+    at java.util.concurrent.ThreadPoolExecutor$Worker.run (ThreadPoolExecutor.java:635)
+    at java.lang.Thread.run (Thread.java:840)
+23:35:33.889 [main] INFO com.tngtech.archunit.ArchConfiguration -- Reading ArchUnit properties from file:/work/target/test-classes/archunit.properties
+23:35:33.971 [main] INFO com.tngtech.archunit.core.PluginLoader -- Detected Java version 17.0.21

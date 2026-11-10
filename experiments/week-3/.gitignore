@@ -1,0 +1,16 @@
+.unset/
+# Your own runs stay out of git. The class runs are kept: the last run of each step,
+# the one the next step starts from.
+*/runs/*
+!e12-write-the-baseline/runs/20261031-184816-claude-opus-5-5/
+!e13-refine-the-ticket/runs/20261031-162158-claude-opus-5-5/
+!e14-write-the-change/runs/20261031-202942-claude-opus-5-5/
+!e15-review-before-code/runs/20261101-053638-claude-opus-5-5/
+!e15-review-before-code/runs/20261101-055318-claude-opus-5-5/
+!e16-revise-the-change/runs/20261101-055045-claude-opus-5-5/
+!e17-code-the-change/runs/20261101-074317-claude-opus-5-5/
+!e18-run-the-sensors/runs/20261101-183519/
+!e19-review-the-code/runs/20261101-185243-claude-opus-5-5/
+!e19-review-the-code/runs/20261101-190534-gpt-6.1-sol/
+!e20-triage/runs/20261101-190659-claude-opus-5-5/
+!e21-fix-the-findings/runs/20261101-213833-claude-opus-5-5/

@@ -1,0 +1,83 @@
+# Week 3's ladder: plain Claude Code on one persistent PetClinic clone.
+# Started by demo.sh.
+name: he-week3
+
+services:
+  session:
+    build:
+      context: .
+      dockerfile: image/Dockerfile
+    image: he-week3
+    stdin_open: true
+    tty: true
+    environment:
+      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+      LADDER_LAYERS: ${LADDER_LAYERS:-}
+      LADDER_PREPARE: "0"
+    volumes:
+      - ${W3_WORK:-./.unset}/petclinic:/work
+      - ${LADDER_CONFIG:-./.unset}:/home/node/.claude
+      - ${LADDER_LAYERS_DIR:-./.unset}:/ladder/layers:ro
+      - ${LADDER_RECORD:-./.unset}:/record
+      - cache:/home/node/.cache
+      - m2:/home/node/.m2
+
+  # The coding agent (e17): the clone is writable. demo.sh adds a read-only mount
+  # over each file the protected-check rules cover (sensors/protected-paths.py),
+  # except files a person approved a change to, in a generated override file
+  # (runs/<run>/compose.protect.yaml), so the agent cannot edit its own grader.
+  author:
+    image: he-week3
+    stdin_open: true
+    tty: true
+    environment:
+      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+      LADDER_LAYERS: ${LADDER_LAYERS:-}
+      LADDER_PREPARE: "0"
+    volumes:
+      - ${W3_WORK:-./.unset}/petclinic:/work
+      - ${LADDER_CONFIG:-./.unset}:/home/node/.claude
+      - ${LADDER_LAYERS_DIR:-./.unset}:/ladder/layers:ro
+      - ${LADDER_RECORD:-./.unset}:/record
+      - cache:/home/node/.cache
+      - m2:/home/node/.m2
+
+  # Every reviewer gets the clone read-only except target/: the build and the tests
+  # run, and nothing else can change, whatever the agent's own settings allow.
+  # The Claude reviewer (e15, and the probe before it):
+  reviewer:
+    image: he-week3
+    stdin_open: true
+    tty: true
+    environment:
+      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+      LADDER_LAYERS: ${LADDER_LAYERS:-}
+      LADDER_PREPARE: "0"
+    volumes:
+      - ${W3_WORK:-./.unset}/petclinic:/work:ro
+      - ${W3_WORK:-./.unset}/petclinic/target:/work/target
+      - ${LADDER_CONFIG:-./.unset}:/home/node/.claude
+      - ${LADDER_LAYERS_DIR:-./.unset}:/ladder/layers:ro
+      - ${LADDER_RECORD:-./.unset}:/record
+      - cache:/home/node/.cache
+      - m2:/home/node/.m2
+
+  # The Codex reviewer (e15 with LADDER_AGENT=codex):
+  codex:
+    image: he-week3
+    user: node
+    entrypoint: ["codex"]
+    environment:
+      CODEX_API_KEY: ${CODEX_API_KEY:-}
+      CODEX_HOME: /home/node/.codex
+    volumes:
+      - ${W3_WORK:-./.unset}/petclinic:/work:ro
+      - ${W3_WORK:-./.unset}/petclinic/target:/work/target
+      - ${LADDER_CODEX_HOME:-./.unset}:/home/node/.codex
+      - ${LADDER_RECORD:-./.unset}:/record
+      - cache:/home/node/.cache
+      - m2:/home/node/.m2
+
+volumes:
+  cache: {}
+  m2: {}

@@ -1,0 +1,14 @@
+ Container he-week3-session-run-461171de0ae4 Creating 
+ Container he-week3-session-run-461171de0ae4 Created 
+step5: risk floor
+step5: test delta
+step5: glossary check
+step5: architecture rule
+step5: build checks: ./mvnw validate
+step5: full test suite (a few minutes)
+step5: known-defect lane: org.springframework.samples.petclinic.PetClinicConcurrencyTests, 3 runs
+step5: mutation testing (PIT)
+step5: done: /record/sensors.md
+step5-docker: MySQL and Postgres tests on the host, alphabetical order (the first run pulls images)
+step5-docker: MySQL and Postgres tests on the host, reversealphabetical order (the first run pulls images)
+step5-docker: done

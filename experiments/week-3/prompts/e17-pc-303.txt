@@ -1,0 +1,8 @@
+Implement the OpenSpec change pc-303 (show each pet's age on the owner's page). The change in openspec/changes/pc-303/ is settled: its decisions log, spec deltas, design and tasks. Use the openspec-apply-change skill and work through tasks.md in order, ticking each task when its check passes. Name each test that shows a scenario by the scenario's title in lowerCamelCase, as the tasks say.
+
+When every task is done, or blocked, review your own change before you finish:
+1. Run the full test suite, `./mvnw test`, and say what passed, failed and was skipped (the MySQL and Postgres tests are skipped without Docker; say so, do not count them as passed).
+2. For each scenario in the spec deltas, name the test that shows it, or say that none does.
+3. List what you were unsure of, and anything you did beyond the tasks.
+
+Put the self-review in your final reply.

@@ -1,0 +1,13 @@
+Revise your implementation of the OpenSpec change pc-301. Sensors, independent code reviews and triage have checked the code you wrote, and I answered at a gate what goes back to you. The gate is in .review-inputs/gate.md.
+
+1. Record each answer under the gate's "Decisions" in openspec/changes/pc-301/decisions.md as a new decision, in the log's format, citing the gate and its date as the source. Where an answer reverses or amends an earlier decision, mark the earlier one as D23 is marked for D25; do not delete its text.
+2. Do the work under the gate's "Work for the author", in its order, with the openspec-apply-change skill. Each item says how it is checked; a task changed by the gate is ticked again only when its new check passes. Keep design.md and tasks.md in line with the decisions as you go.
+3. If .review-inputs/approvals.md exists, a person approved the change it names to a protected check. Make exactly that change and nothing else to that file. If it does not exist, every protected check stays as it is.
+4. Leave the items under "Left as they are" as they are. Do nothing else the reviews might suggest. If an item turns out to need a decision the gate does not hold, stop that item and say so.
+
+Do not edit anything in .review-inputs/. When every item is done, or blocked, review your own change before you finish:
+1. Run the full test suite, `./mvnw test`, and say what passed, failed and was skipped (the MySQL and Postgres tests are skipped without Docker; say so, do not count them as passed).
+2. For each gate item, say what you changed, in which files, and the result of its check.
+3. List what you were unsure of, and anything you did beyond the gate.
+
+Put the self-review in your final reply.

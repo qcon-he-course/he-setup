@@ -1,0 +1,1 @@
+The coding agent's rules for e17 (step 4). The protected checks are read-only by mount (compose service `author`), so the rules say what to do when one fails; the build file has no mount, so the rule against new dependencies is a rule only, and the risk floor and the test-delta audit in step 5 check it.

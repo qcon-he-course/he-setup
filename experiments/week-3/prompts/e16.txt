@@ -1,0 +1,8 @@
+Revise the OpenSpec change pc-301 before anyone writes code for it. Reviewers read the change independently, and I answered their questions at a gate. The gate's answers are in .review-inputs/gate.md and the reviews it names are next to it in .review-inputs/.
+
+1. Record each answer under the gate's "Decisions" in openspec/changes/pc-301/decisions.md as a new decision, in the log's format, citing the gate and its date as the source. If the gate has none, add none.
+2. Make every fix the gate lists under "Fixes that need no decision".
+3. Leave the items under "Left as they are" as they are, apart from recording any known gap the gate names.
+4. For any other finding in the reviews: act on it only if it follows from a decision in the log, and say so. Otherwise leave it and say why.
+
+Change only the files in openspec/changes/pc-301/. Do not change code, tests, the baseline spec or GLOSSARY.md, and do not edit anything in .review-inputs/. Check the change with `openspec validate pc-301 --strict`. In your final reply, list each gate answer and each fix with the file and the section that now carries it.

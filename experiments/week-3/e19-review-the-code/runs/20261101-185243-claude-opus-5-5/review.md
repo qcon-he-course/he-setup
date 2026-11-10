@@ -1,0 +1,152 @@
+# Code review: pc-301 (record a pet's microchip number)
+
+Before merging, two things need fixing. The Postgres migration test fails when it runs after `PostgresIntegrationTests` (C1). And the working tree holds release 1 and release 2 together, although the deployment plan requires release 1 to ship first and on its own (C2). The feature code itself matches the spec and the decisions log.
+
+What I checked: the full diff against HEAD, including new files; the change's spec deltas, design, decisions and tasks; the sensor results; and the project baseline. I ran `openspec validate pc-301 --strict` → "Change 'pc-301' is valid". I did not re-run the test suite; for test results I cite the sensors.
+
+## 1. Scenarios
+
+| # | Scenario | Verdict | Evidence |
+|---|---|---|---|
+| 1 | A pet is added without a microchip number | MET | `PetControllerTests.MicrochipNumber.addWithoutMicrochipNumberSavesNoneAndDoesNotQuery`: `flash().attribute("message","New Pet has been Added")`, redirect, and `getMicrochipNumber()).isNull()` on the saved owner's pet |
+| 2 | A blank microchip number counts as none | MET | `addWithBlankMicrochipNumberSavesNone`: `isNull()` on the saved pet; also `PetTests.blankMicrochipNumberBecomesNone` |
+| 3 | Two pets without a microchip number | MET | `ClinicServiceTests.shouldSaveTwoPetsWithoutMicrochipNumber` on H2: both ids are not null. The validator makes no lookup for a pet without a number: `PetValidatorTests.noMicrochipNumberIsAcceptedWithoutQuery` → `verifyNoInteractions(pets)` |
+| 4 | Spaces are removed | MET | `addRemovesSpacesFromMicrochipNumber`: the saved value `isEqualTo("985141000123456")` |
+| 5 | Dashes are not removed | MET | `addWithDashedNumberIsRejectedAndNotSaved`: field error code `microchipNumber.invalid`, "must be 15 digits" in the page, `verify(owners, never()).saveAndFlush` |
+| 6 | Fifteen digits are accepted (either form) | MET | Add form: `addAcceptsFifteenDigits`. Edit form: `editReplacesStoredNumberOnOwnersPet`, and `PetMicrochipNumberIntegrationTests` reads the H2 column |
+| 7 | Any first three digits are accepted | PARTLY | Only `PetValidatorTests.anyFirstThreeDigitsAreAccepted` (no errors). No test saves the pet. That the save happens is INFERRED: with no errors the handler saves (`PetController.java:117-123`) |
+| 8 | Fourteen digits are rejected (either form) | PARTLY | Only `PetValidatorTests.fourteenDigitsAreRejected` (one error, `microchipNumber.invalid`). For this input no test asserts "form shown again" or "nothing is saved", on either form. INFERRED that both hold: the same `hasErrors()` branch is covered by scenario 5 (add) and by the "12345" edit in `PetMicrochipNumberIntegrationTests` |
+| 9 | Sixteen digits are rejected | PARTLY | Same as 8: `sixteenDigitsAreRejected` |
+| 10 | A 10-character non-ISO number is rejected | PARTLY | Same as 8: `tenCharacterNonIsoNumberIsRejected` |
+| 11 | A number held by another owner's pet | PARTLY | `addWithNumberOfAnotherOwnersPetShowsOnlyIsAlreadyInUse` shows THEN 1 (code `duplicate`, "is already in use") and THEN 2 (`never()).saveAndFlush`). THEN 3 ("page shows neither name") is asserted only as `not(containsString("Leo"))` / `"Franklin"`, and no fixture in that test contains either name (`PetControllerTests.java:86-98`), so the assertion cannot fail. The property does hold, by code (INFERRED, high): `rejectDuplicateMicrochipNumber` passes no arguments (`PetValidator.java` diff), and `rejectDuplicateMicrochipNumberPutsOneDuplicateErrorOnMicrochipNumber` asserts `getArguments()).isNullOrEmpty()`. See C5 |
+| 12 | Editing a pet to another pet's number | MET | `editToAnotherPetsNumberIsRejected`: `errorCount(1)`, code `duplicate`, `never()).saveAndFlush`. "doggy" is `TEST_PET_ID + 1` (`PetControllerTests.java:96-98`) |
+| 13 | Saving a pet with its own number | MET | `editSavingPetWithItsOwnNumberIsAccepted` stubs `existsByMicrochipNumber` → true, so using the wrong query would fail the test. Saved value `isEqualTo(NUMBER)`. On the database: `ClinicServiceTests.shouldFindMicrochipNumberOfAnotherPetButNotOfThePetItself` → `existsByMicrochipNumberAndIdNot(..., chippedId)).isFalse()` |
+| 14 | A new number replaces the stored one | MET | `editReplacesStoredNumberOnOwnersPet` (copy onto a different instance) and `PetMicrochipNumberIntegrationTests` reads "985141000654321" from H2 |
+| 15 | A malformed new number is rejected | MET | `PetMicrochipNumberIntegrationTests`: status 200, view `pets/createOrUpdatePetForm`, "must be 15 digits", and the stored value is still "985141000123456" |
+| 16 | The field is cleared | MET | `editWithEmptyFieldRemovesStoredNumberFromOwnersPet` and `PetMicrochipNumberIntegrationTests` (`storedMicrochipNumber(petId)).isNull()`) |
+| 17 | Edit form: a pet with a number | MET | `editFormShowsStoredMicrochipNumber`: `value="985141000123456"` |
+| 18 | Edit form: a pet without a number | MET | `editFormForPetWithoutNumberShowsEmptyField`: `value=""` |
+| 19 | A malformed number is not checked for duplicates | MET | `PetValidatorTests.malformedNumberNeverReachesRepositoryAndGetsOneError`: exactly one error, `microchipNumber.invalid`, and `verifyNoInteractions(pets)` |
+| 20 | A duplicate gets only the duplicate error | MET | `addWithNumberOfAnotherOwnersPetShowsOnlyIsAlreadyInUse`: `errorCount(1)`, code `duplicate` |
+| 21 | Two simultaneous adds with the same number | MET (H2) | `PetClinicConcurrencyTests.testDuplicateMicrochipNumberRaceConditionShowsFormAgain` asserts one pet with the number, one `RaceChip` pet, and the loser gets 200 with "is already in use" after the microchip input. On MySQL and Postgres the forms path is not tested (known gap, D20 and design Risks) |
+| 22 | The constraint is reported as a duplicate microchip number | MET | `createMicrochipConstraintIsReportedOnMicrochipNumber` (upper-case H2-style message) and `editMicrochipConstraintIsReportedOnMicrochipNumber` (lower case): `errorCount(1)` on `microchipNumber`, so there is no name error. H2's real message contains the name: `ClinicServiceTests.shouldFailToInsertDuplicateMicrochipNumberForDifferentOwners` |
+| 23 | The name constraint is still reported on the name | MET | `createNameConstraintIsStillReportedOnNameOnly` and `editNameConstraintIsStillReportedOnNameOnly`: `errorCount(1)`, code `duplicate` on `name` |
+| M1 | Two simultaneous adds with the same name (unchanged) | UNKNOWN | It is the PC-302 known-defect test. It passed 3 of 3 in the lane (sensors.md:113), which does not show the defect is fixed |
+| M2 | The constraint is reported as a duplicate name | MET (unchanged) | `PetControllerCharacterizationTests.createUniqueViolationMessageMatchedCaseInsensitively` / `edit…` (lines 271, 445) |
+| M3 | Another integrity violation | MET | `createOtherIntegrityViolationIsRethrown` / `editOtherIntegrityViolationIsRethrown` (`"fk_type"`, `hasRootCauseInstanceOf`). The request fails, so no form is rendered and neither "not shown" THEN can be violated |
+| M4 | Three errors on the add form (unchanged) | MET | Existing `createReportsDuplicateNameAndFutureBirthDateTogether` / `createReportsEveryValidatorErrorAtOnce`. The full suite has 0 failures |
+| M5 | Two errors on the edit form (unchanged) | MET | Existing tests. Full suite 0 failures |
+| M6 | Three errors on the add form, one on the microchip number | MET | `addReportsThreeErrorsOneOnMicrochipNumber`: `errorCount(3)` with the three codes and three messages |
+| M7 | Two errors on the edit form, one on the microchip number | MET | `editReportsTwoErrorsOneOnMicrochipNumber`: `errorCount(2)`, `required` and `duplicate` |
+| O1 | Owner's page: a pet with a microchip number | MET | `OwnerControllerTests.showOwnerShowsPetsMicrochipNumber`: `<dt>Microchip number</dt>\s*<dd>985141000123456</dd>`. The test uses George's pet "Max", not "petty" |
+| O2 | Owner's page: a pet without a microchip number | MET | `showOwnerShowsEmptyMicrochipNumberForPetWithoutOne`: `<dd></dd>`, and no `<dd>none</dd>` |
+
+## 2. Decisions and baseline
+
+| Decision | Status | Where |
+|---|---|---|
+| D1 term | CARRIED | `messages.properties` `microchipNumber=Microchip number`. The glossary sensor found no avoided word |
+| D2 optional | CARRIED | `PetValidator`: `if (microchipNumber != null)`. The column is nullable in all three schemas |
+| D3 15 digits | CARRIED | `Pattern.compile("[0-9]{15}")` |
+| D4 unique across all owners | CARRIED | Global `exists…` queries. The constraint is on `microchip_number` alone in H2, MySQL and Postgres |
+| D5 no lookup | CARRIED | `PetRepository` has only two `exists` methods |
+| D6 / D16 owner's page | CARRIED | `ownerDetails.html`: `<dt>`/`<dd th:text="${pet.microchipNumber}">` |
+| D7 same rules on edit | CARRIED | One `petValidator` in `initPetBinder` for both forms |
+| D8 empty field clears | CARRIED | `updatePetDetails`: `existingPet.setMicrochipNumber(pet.getMicrochipNumber())`. `th:field` shows the stored value |
+| D9 trim and remove spaces only | CARRIED | `Pet.setMicrochipNumber`: `trim().replace(" ", "")` |
+| D10 / D11 messages, no other pet named | CARRIED | Codes `microchipNumber.invalid` and `duplicate`. `rejectValue(MICROCHIP_NUMBER, "duplicate")` passes no arguments |
+| D12 named constraints, database duplicate on the field | CARRIED | Three `schema.sql` files and `isDuplicateMicrochipNumberViolation` |
+| D13 MySQL name constraint untouched | CARRIED | `UNIQUE (owner_id, name)` unchanged in `db/mysql/schema.sql` |
+| D14 own number | CARRIED | `existsByMicrochipNumberAndIdNot` for a pet that is not new |
+| D15 no prefix check | CARRIED | Only the pattern is checked |
+| D17 one error, reported with the others | CARRIED | `if … else if`, inside the same `validate` |
+| D19 `PetValidator` method called from the `catch` | CARRIED | `rejectDuplicateMicrochipNumber(Errors)` is called in both `catch` blocks. No new `rejectValue` in the controller. The architecture rule passes (sensors). `archunit_store` is not in `git status` |
+| D21 G3 test | CARRIED | `PetMicrochipNumberIntegrationTests` |
+| D22 | Accepted limitation, nothing to carry | — |
+| D23 / D25 migration and two releases | SOFTENED | Scripts, column lists in the seed inserts, and a rollback step in `MicrochipNumberMigrationScenario` are all present. But the Postgres test that is the evidence fails in one class order (C1), and release 1 is not separate from release 2 (C2) |
+| D24 no visit form | CARRIED | `createOrUpdateVisitForm.html` is not changed |
+| D26 no dependency | CARRIED | `pom.xml` is not in `git status` |
+
+| Baseline line | Departure? | Decision? |
+|---|---|---|
+| A1: no pet repository; pets reached through their owner | **Yes.** There is a new `PetRepository extends Repository<Pet, Integer>` (`PetRepository.java:25`). It only reads; writes still go through `owners.saveAndFlush` | Design Decision 4 only. The decisions log has no decision that departs from A1 (D18 hands placement to the design, D19 does not mention a repository). See C3 |
+| A2: no `rejectValue` in a controller | No | D19 |
+| A3: schema from SQL scripts, no migration tool | Consistent: hand-run scripts, not run at start | D23 (known gap) |
+| A4: database enforces uniqueness | Extended to the microchip number | D12 |
+| B1 formatting and URLs | No. `./mvnw validate` passes (sensors) | — |
+| B2 i18n | No. All nine locale files get both keys. The suite passes, including `I18nPropertiesSyncTest` | — |
+| PC-302 | The new race test uses owners 4 and 5, so it avoids the same-owner defect | — |
+
+Nothing in the code lacks a decision, task or necessity behind it. The redundant `@Column` on `Pet.microchipNumber` is harmless.
+
+## 3. Sensors
+
+- **Risk floor critical (protected check):** `PetControllerCharacterizationTests` only adds `@MockitoBean PetRepository` (3 lines added, 0 removed). The new constructor needs it. No assertion is touched. Does not matter here.
+- **Skip added, `MySqlMicrochipNumberMigrationTests:33`:** expected (D23, D26). This test passed with Docker in both orders.
+- **Skip added, `PostgresMicrochipNumberMigrationTests:51`:** expected. But with Docker this test **failed** in alphabetical order (C1).
+- **Broad catch, `PetClinicConcurrencyTests:172`:** the exceptions are collected and then `assertThat(exceptions).isEmpty()`, so nothing is hidden. Does not matter here.
+- **Glossary:** clean.
+- **Architecture rule:** passes, and the freeze store is unchanged. Confirms D19.
+- **Build checks:** pass.
+- **Full suite 153 / 0 failures / 3 skipped:** the Docker classes were not run there. Not run is not passed.
+- **Mutation testing:** on changed lines, 22 of 22 mutants killed. The 7 survivors and mutants without coverage are all on lines outside the change, so they do not matter here.
+- **Docker, alphabetical order:** `PostgresMicrochipNumberMigrationTests` failed with "pets has no microchip_number column before the migration… was true", build exit 1. **This matters** (C1).
+- **Docker, reverse order:** all pass. That is order dependence, not evidence the test is fine.
+
+## 4. Findings
+
+**C1: BLOCK.** `PostgresMicrochipNumberMigrationTests` depends on test order. When it runs after `PostgresIntegrationTests`, it never sees a release-1 database.
+- **Evidence:** sensors.md:121-133: in alphabetical order the Postgres migration test failed with "pets has no microchip_number column before the migration… Expecting value to be false but was true" (build exit 1). In reverse order it passed (sensors.md:135-142).
+- **Mechanism (INFERRED, medium):** `PostgresIntegrationTests` (`PostgresIntegrationTests.java:51-52`) starts the same compose service `postgres` and runs the release-2 `schema.sql`. Its Spring context is cached and stays up, so the container is still running. When the migration test starts its own context, Spring Boot's Docker Compose support skips start-up because the service is already running (I believe the default is `spring.docker.compose.start.skip=if-running`). Its `--force-recreate,--renew-anon-volumes` arguments (`PostgresMicrochipNumberMigrationTests.java:40`) therefore never apply, and `spring.sql.init.mode=never` does not help, because the table already has the column.
+- **Consequence:** the build fails in one order. In the other order it passes, but only by luck. D23's evidence on Postgres is not reliable.
+- **Fix:** make the migration test get a fresh database whatever ran before it. Options: `spring.docker.compose.start.skip=never`; a separate compose service or project; or a schema created and dropped inside the test. Re-verify with Docker in both class orders.
+- **Falsification:** this finding is wrong if the alphabetical run failed for some other reason, for example a stale container from outside the suite, and the test passes after `PostgresIntegrationTests` in a clean run.
+- **Confidence:** high that the test depends on order; medium on the mechanism.
+
+**C2: DISCUSS.** Release 1 and release 2 are in one working tree. D25 requires release 1 (the column lists in the seed inserts) to be merged and released on its own first.
+- **Evidence:** `git diff HEAD` holds both the `db/h2/data.sql` / `db/mysql/data.sql` column lists and every release-2 file. HEAD 76adfc4 has none of the column lists. tasks.md:10 (task 0.2) is unticked: "Release 1 is merged and released on its own, before any task of release 2 is merged." design.md:119-121 gives the order.
+- **Consequence:** merging this as one commit loses the safe rollback target that D25 depends on. On MySQL, rolling back to the code before release 1 cannot start (F12).
+- **Falsification:** this finding is wrong if release 1 has already been released from another branch. Nothing in this clone shows that.
+- **Confidence:** high.
+
+**C3: DISCUSS.** `PetRepository` departs from baseline A1 ("There is no repository for pets"), and no decision in the log records the departure.
+- **Evidence:** `PetRepository.java:25`; project-baseline.md:9 and :3 ("A change that departs from a line here needs a decision in its log that says so"). design.md:48-62 justifies the repository, but decisions.md has no matching D-entry. D18 and D19 do not name a repository.
+- **Note:** the departure is narrow: two read-only `exists` queries, and writes still cascade from `Owner`. VERIFIED from the interface and `PetController.java:123, 203`.
+- **Falsification:** this finding is wrong if the project treats a design-doc decision as enough for a baseline departure.
+- **Confidence:** high.
+
+**C4: INFORMATIONAL.** For scenarios 7-10 (any first three digits; 14 and 16 digits; 10-character non-ISO), only the validator is tested. "Nothing is saved", "the pet is saved" and "either form" are not asserted for those inputs.
+- **Evidence:** `PetValidatorTests.MicrochipNumber`. There are no controller tests with "98514100012345", "9851410001234567", "0A0139F53B" or "000000000000001".
+- **Why it changes little:** the same `hasErrors()` branch is covered by scenario 5 and the G3 edit. Adding these inputs to the controller tests would close the gap mechanically.
+- **Falsification:** this finding is wrong if a controller or integration test submits these values.
+- **Confidence:** high.
+
+**C5: INFORMATIONAL.** In `addWithNumberOfAnotherOwnersPetShowsOnlyIsAlreadyInUse`, the "Leo"/"Franklin" assertions cannot fail.
+- **Evidence:** the fixture has only "petty", "doggy" and "hamster" (`PetControllerTests.java:86-98`). Nothing could put "Leo" or "Franklin" on the page. The test comment even breaks off mid-sentence ("the / page must not name").
+- **Why it changes little:** D11 is held by the code and by the argument-free assertion in `PetValidatorTests`.
+- **Falsification:** this finding is wrong if the mocked owner in that test is George Franklin with a pet "Leo".
+- **Confidence:** high.
+
+**C6: INFORMATIONAL.** Two task ticks don't match the evidence. Task 1.5 is unticked although its files exist. Task 6.1 is unticked although the sensors' full suite passes without Docker. With Docker, 6.1 does not pass in one order (C1).
+- **Evidence:** tasks.md:22, :54.
+- **Confidence:** high.
+
+**C7: INFORMATIONAL.** The baseline spec `openspec/specs/pets/` is untracked. It enters the repository with this change, not from HEAD.
+- **Evidence:** `git show --stat HEAD -- openspec` lists only `config.yaml` and `.gitkeep` files.
+- **Falsification:** this finding is wrong if it was committed on another branch that this one will merge with.
+- **Confidence:** high.
+
+## 5. For the person
+
+1. **C1:** the Postgres migration test fails when it runs after `PostgresIntegrationTests` (sensors.md:121-133). Which way should it get a fresh database: `start.skip=never`, a separate compose service, or a schema of its own? Whichever it is, it has to pass with Docker in both orders before D23 counts as evidenced.
+2. **C2:** this diff holds release 1 (`data.sql` column lists) and release 2 together, and task 0.2 is open. Will you split release 1 out and ship it first, as D25 requires? Or has it already shipped somewhere this clone can't show?
+3. **C3:** `PetRepository` departs from baseline A1, and only the design records it. Should a decision be added to the log (read-only pet queries for the uniqueness check, writes still through `Owner`), or should the baseline line change?
+
+## 6. Overall
+
+The feature code matches the spec and the decisions log. Normalising in the setter, both validator rules, the D19 path from the database `catch` through the validator, copying the number on edit, the two views, all nine locale files, and the three named constraints all match. Most scenarios are shown by tests that can fail, including H2 tests against the real database for the edit/clear flow, the constraint message and the race. The architecture rule passes with the freeze store unchanged. Every mutant on changed lines was killed. What stands in the way is the migration and release side of D23 and D25:
+- The Postgres migration test failed in one of the two Docker runs, so it is not yet evidence (C1).
+- The diff merges release 1 into release 2, against the deployment plan (C2).
+- The new pet repository departs from baseline A1, and the decisions log does not record it (C3).
+
+The other findings are test-quality and bookkeeping notes that change nothing about the behaviour.

@@ -1,0 +1,7 @@
+Write the OpenSpec change for ticket PC-303: show each pet's age on the owner's page. The change pc-303 already exists: its folder holds the decisions log, openspec/changes/pc-303/decisions.md, where the person recorded every decision with the ticket. Continue that change and base it on the log. The baseline spec is openspec/specs/pets/spec.md, and the project's terms are in GLOSSARY.md.
+
+This project follows two conventions for scenarios and tests:
+1. Each scenario ends with a last line `- **CHECKED AT** <level>`: the lowest level at which its outcome can be observed, from unit < form < database < mysql-postgres < concurrency < manual (manual only with a recorded reason). Most scenarios are checked at unit; fewer at each level up.
+2. A test says which scenario it shows by its name alone, with no comment: the method's name is the scenario's title in lowerCamelCase, punctuation and apostrophes dropped, and more words may follow. A test's level comes from its class: @WebMvcTest is form; @SpringBootTest and @DataJpaTest are database, and form as well if it drives MockMvc or HTTP; a test with no Spring test annotation is unit. Write the tasks so that the tests follow this.
+
+If the log does not settle something the change needs, do not decide it: list it as an open question in the proposal. Check the change with `openspec validate pc-303 --strict`. This is planning only: do not change code or tests.

@@ -1,0 +1,669 @@
+diff --git a/GLOSSARY.md b/GLOSSARY.md
+new file mode 100644
+index 0000000..9153ba5
+--- /dev/null
++++ b/GLOSSARY.md
+@@ -0,0 +1,9 @@
++# Pet clinic
++
++The clinic's reception keeps a record of owners, their pets and the pets' visits.
++
++## Language
++
++**Microchip number**:
++The 15-digit ISO 11784 number read from the microchip implanted in a pet.
++_Avoid_: Chip number, chip ID, transponder
+diff --git a/openspec/changes/pc-301/decisions.md b/openspec/changes/pc-301/decisions.md
+new file mode 100644
+index 0000000..96d82b1
+--- /dev/null
++++ b/openspec/changes/pc-301/decisions.md
+@@ -0,0 +1,41 @@
++# Decisions: pc-301
++
++Ticket: PC-301 Record a pet's microchip number
++
++## Decided
++
++- **D1** The term is **microchip number**. "Chip number", "chip ID" and "transponder" are not used. Asked as Q1, answered 2026-10-31.
++- **D2** The microchip number is optional on both the add form and the edit form. Asked as Q2, answered 2026-10-31. Rejected: required on both forms.
++- **D3** A microchip number must be exactly 15 digits: ISO 11784 only. Asked as Q3, answered 2026-10-31. Rejected: also accepting 9- or 10-character non-ISO chips (AVID, FDX-A).
++- **D4** A microchip number is unique across all pets of all owners, not only within one owner. Asked as Q4, answered 2026-10-31. Rejected: unique per owner.
++- **D5** PC-301 only records the microchip number. Looking up a pet by its microchip number is a separate ticket. Asked as Q5, answered 2026-10-31.
++- **D6** The owner's page shows each pet's microchip number with the pet's other details. Asked as Q6, answered 2026-10-31.
++- **D7** The edit form accepts a new microchip number for a pet that already has one, under the same rules as adding. Asked as Q7, answered 2026-10-31.
++- **D8** An empty microchip number on the edit form removes the stored number. The edit form must show the stored number, so clearing it is deliberate. Asked as Q8, answered 2026-10-31. Rejected: an empty field keeps the old number.
++- **D9** The entered value is trimmed and its spaces removed, then it must be exactly 15 digits. Only the digits are stored. Nothing else is removed (no dashes, no dots). Asked as Q9, answered 2026-10-31.
++- **D10** A microchip number that is not 15 digits after D9 gets the error "must be 15 digits". A duplicate gets "is already in use". Both errors are on the microchip number field. Asked as Q10, answered 2026-10-31.
++- **D11** The duplicate error is only "is already in use". The form must not show another owner's pet or details. Asked as Q11, answered 2026-10-31. Rejected: naming the pet or owner that has the number.
++- **D12** H2, MySQL and Postgres each get a named unique constraint on the microchip number. A duplicate caught by the database is reported as "is already in use" on the microchip number field. Where that code goes is a design decision, not part of this requirement. Asked as Q12, answered 2026-10-31.
++- **D13** Fixing the unnamed MySQL pet-name constraint (F4) is not part of PC-301. It is a separate bug. Asked as Q13, answered 2026-10-31.
++- **D14** A pet never conflicts with its own microchip number, compared after spaces are removed. Saving a pet again with the number it already has is accepted. Asked as Q14, answered 2026-10-31.
++- **D15** Only the 15-digit check applies. The country or manufacturer code in the first three digits is not checked. Asked as Q15, answered 2026-10-31. Rejected: checking against ISO 3166 numeric and manufacturer codes.
++- **D16** On the owner's page, a pet without a microchip number shows the "Microchip number" label with an empty value. Asked as Q16, answered 2026-10-31. Rejected: hiding the label; showing a word such as "none".
++- **D17** A malformed microchip number gets the format error only. A well-formed duplicate gets "is already in use" only. Either one is reported together with the form's other errors. Asked as Q17, answered 2026-10-31.
++- **D18** Where the uniqueness check lives in the code is a design decision for the change, not part of this requirement (see F6). Stated by the user on 2026-10-31.
++
++## Facts the decisions rest on
++
++- **F1** Nothing in the code or specs mentions a chip today. Source: `grep -rni chip src openspec`, no matches.
++- **F2** A pet has a name, birth date, type and visits. Source: `src/main/java/org/springframework/samples/petclinic/owner/Pet.java`; `pets` table in `src/main/resources/db/h2/schema.sql:46-52`, `db/mysql/schema.sql:38-48`, `db/postgres/schema.sql:36-42`.
++- **F3** Pet names are unique per owner, enforced by the controller (`PetController.java:110-112`, `141-144`) and by the constraint `unique_owner_pet_name` (`db/h2/schema.sql:55`, `db/postgres/schema.sql:45`), which the controller recognises by name (`PetController.java:193-196`).
++- **F4** On MySQL the owner-and-name unique constraint has no name (`db/mysql/schema.sql:47`), so the name check in F3 probably doesn't match there. INFERRED, not tested.
++- **F5** No pet search exists. `OwnerRepository` only finds owners.
++- **F6** Controllers must leave field validation to the form's Validator (`ArchitectureTests.java:36-41`). `PetValidator` has no repository access.
++- **F7** The owner's page shows each pet's name, birth date and type. Source: `src/main/resources/templates/owners/ownerDetails.html:52-56`.
++- **F8** None of the 13 seeded pets has a microchip number. Source: `src/main/resources/db/h2/data.sql`.
++- **F9** The messages "is required" and "is already in use" already exist (`src/main/resources/messages/messages.properties:2,4`). `I18nPropertiesSyncTest` exists, so a new message probably has to be added to every locale's message file (INFERRED).
++- **F10** A duplicate pet name caught by the database is shown on the form (`PetController.java:121-128`, `152-159`).
++
++## Open
++
++- None on PC-301's frontier. Two follow-ups are outside this change: looking up a pet by its microchip number (D5), and the unnamed MySQL pet-name constraint (D13, F4). Both need their own tickets.
+diff --git a/openspec/changes/pc-301/design.md b/openspec/changes/pc-301/design.md
+new file mode 100644
+index 0000000..f72653a
+--- /dev/null
++++ b/openspec/changes/pc-301/design.md
+@@ -0,0 +1,109 @@
++# Design
++
++## Context
++
++See `proposal.md` for the motivation, and `specs/pets/spec.md` and `specs/owner-details/spec.md` for the requirements. The facts below shape how the change is built. Each is labelled VERIFIED (code opened) or INFERRED (not checked).
++
++- **Validation placement.** `ArchitectureTests.java:36-43` forbids controllers from calling `Errors.rejectValue`, because field validation belongs in `PetValidator`. The rule is wrapped in `freeze(...)`, so the calls that already exist are recorded in `src/test/resources/archunit_store/1cbfc1d1-…` and tolerated. That includes the four calls in `PetController`'s two POST handlers. VERIFIED.
++- **Validator wiring.** `PetValidator` is created with `new PetValidator()` in `PetController.initPetBinder` (`PetController.java:95`). It has no repository (F6). VERIFIED.
++- **Pet ids.** The `id` field cannot be bound from the form (`PetController.java:96`). On edit, the `pet` model attribute is the owner's pet loaded by the path's `petId` (`PetController.java:74-86`). So `pet.getId()` can be trusted when excluding a pet's own number. VERIFIED.
++- **Edit copies fields.** `updatePetDetails` copies name, birth date and type onto the owner's pet (`PetController.java:177-191`). A new field is not copied unless it is added there. VERIFIED.
++- **Database violations.** `isDuplicatePetNameViolation` matches the constraint name in the exception message, ignoring case (`PetController.java:193-196`). VERIFIED.
++- **Schema setup.** The schema is created by `spring.sql.init` from `db/${database}/schema.sql`, and Hibernate does not manage the DDL (`application.properties:3,10`). The MySQL and Postgres scripts use `CREATE TABLE IF NOT EXISTS` (`db/mysql/schema.sql:38`, `db/postgres/schema.sql:36`). VERIFIED.
++- **Open session.** `spring.jpa.open-in-view=false` (`application.properties:11`). VERIFIED.
++- **Message files.** `I18nPropertiesSyncTest.checkI18nPropertyFilesAreInSync` requires every key of `messages.properties` in every `messages_*.properties` except `messages_en` (`I18nPropertiesSyncTest.java:112-127`). VERIFIED.
++
++## Goals / Non-Goals
++
++**Goals:**
++
++- Put the format and uniqueness rules in `PetValidator`, so the add and edit forms share them and the architecture rule's intent holds.
++- Make the database the final guard against duplicates, under one constraint name on all three databases.
++
++**Non-Goals:**
++
++- No index or query for finding a pet by its microchip number beyond what the uniqueness check needs (D5).
++- No change to the owner-and-pet-name constraint on MySQL (D13).
++- No schema migration tool. The project has none.
++
++## Decisions
++
++### 1. Storage: a nullable `microchip_number` column, with no number stored as NULL
++
++`pets.microchip_number` is `VARCHAR(15)` on H2 and MySQL and `TEXT` on Postgres, matching each script's existing style. It is nullable. "No microchip number" is stored as `NULL`, never as `''`. A unique constraint allows any number of NULLs on H2, MySQL and Postgres, but only one `''` (INFERRED from each database's documented behaviour). An empty string would therefore make the second pet without a number a duplicate (see the scenario "Two pets without a microchip number").
++
++*Alternative rejected:* `CHAR(15)`. It pads values, and the format check already fixes the length.
++
++### 2. Normalisation in `Pet.setMicrochipNumber`
++
++The setter trims the value and removes every `' '`. If the result is empty, it stores `null`. Other characters, including dashes, dots and inner tabs, are left in place for the validator to reject (D9). Putting this in the entity means that whatever path sets the value, the validator, the uniqueness query and the stored column all see the same normalised string.
++
++*Alternative rejected:* a `PropertyEditor` registered in `PetController.initPetBinder`. It works only for web binding, and validator tests would have to repeat the normalisation.
++
++### 3. Format check: `[0-9]{15}` in `PetValidator`
++
++The check uses `[0-9]` rather than `\d`, so that the rule cannot quietly widen to other digit characters if the pattern ever gets Unicode flags. The error code is `microchipNumber.invalid`, following the existing `telephone.invalid` (`messages.properties:34`), with the message "must be 15 digits". The prefix (country or manufacturer code) is not checked (D15).
++
++### 4. Uniqueness check in `PetValidator`, through a new `PetRepository`
++
++The new interface is `PetRepository extends Repository<Pet, Integer>`. It has only what the check needs:
++
++- `existsByMicrochipNumber(String)`, for a new pet, and
++- `existsByMicrochipNumberAndIdNot(String, Integer)`, for an existing pet (D14).
++
++Two methods are needed because `id <> NULL` is never true in SQL. A single `AndIdNot` query called with a null id would never find a duplicate on the add form. `PetValidator` gets a constructor that takes `PetRepository`, and `PetController` injects it and calls `new PetValidator(pets)` in `initPetBinder`. The uniqueness query runs only when the format check passes (D17), so the field gets at most one error. The error code is the existing `duplicate` ("is already in use", `messages.properties:4`), and the error carries no argument that names the other pet (D11).
++
++On edit, the bound `pet` is a detached entity (`open-in-view=false`), so the `exists` query cannot flush the half-edited pet first. INFERRED, and covered by the edit scenarios in task 3.
++
++*Alternatives rejected:*
++
++- A check in the controller, as the pet-name check does today. It adds a `rejectValue` call that the frozen rule exists to stop.
++- A query on `OwnerRepository`. That repository finds owners. A pet-level `exists` query does not belong there, and loading every owner to scan their pets would not scale.
++
++### 5. Database duplicates are mapped in the controller, next to the name mapping
++
++The constraint is named `unique_pet_microchip_number` on all three databases:
++
++- H2: `ALTER TABLE pets ADD CONSTRAINT … UNIQUE`.
++- MySQL: a named `CONSTRAINT … UNIQUE` inside `CREATE TABLE`.
++- Postgres: `CREATE UNIQUE INDEX IF NOT EXISTS`, as `unique_owner_pet_name` is (`db/postgres/schema.sql:45`).
++
++Neither constraint name is a substring of the other. Both POST handlers' `catch (DataIntegrityViolationException)` blocks check for the microchip constraint first, then the name constraint, then rethrow (spec: "Duplicate microchip numbers caught by the database").
++
++This translates a persistence failure, which the validator cannot see because it runs before the save. So it stays in the controller with the name mapping (F10). This adds a `rejectValue` call to each of `processCreationForm` and `processUpdateForm`. ArchUnit's freeze store ignores line numbers by default, so the new calls probably match violations already stored for the same methods and the rule passes (INFERRED, not tested). If `ArchitectureTests` fails instead, the implementer must not regenerate or edit the freeze store. They should raise it with the ticket owner (task 4.3).
++
++*Alternative rejected:* run the validator again after the failed save, so that the `exists` query finds the winning row. It depends on the other transaction's commit being visible and on the failed persistence context not flushing again. That is too fragile for a race-condition path.
++
++### 6. The edit copy includes the microchip number
++
++`updatePetDetails` also copies `microchipNumber`, including `null`, so that clearing the field removes the number (D8).
++
++### 7. Views and messages
++
++- Two new keys:
++  - `microchipNumber=Microchip number` (glossary term, D1)
++  - `microchipNumber.invalid=must be 15 digits`
++
++  Both go in `messages.properties` and every locale file except `messages_en`.
++- `pets/createOrUpdatePetForm.html` gets a text input for `microchipNumber` through the existing `inputField` fragment, after the birth date. `th:field` fills it with the stored value on edit (spec: "The edit form shows the stored microchip number").
++- `owners/ownerDetails.html` gets `<dt th:text="#{microchipNumber}">` and `<dd th:text="${pet.microchipNumber}">` after the type (`ownerDetails.html:55-56`). A `null` renders as an empty `dd` (INFERRED Thymeleaf behaviour), which is what D16 asks for.
++
++## Risks / Trade-offs
++
++- [Existing MySQL or Postgres databases keep their old `pets` table, because `CREATE TABLE IF NOT EXISTS` skips it] → The Migration Plan gives the `ALTER TABLE` statements. H2 is in memory and rebuilt on every start.
++- [Each database words its duplicate-key message differently, and H2 may put the name in upper case inside a generated index name] → The match ignores case and looks for the constraint name as a substring. Task 4 tests the real message on H2. The MySQL and Postgres integration tests run only where Docker is available (`MySqlIntegrationTests.java:43`, `PostgresIntegrationTests.java:67-68`).
++- [The freeze store may reject the two new controller `rejectValue` calls] → Decision 5. Task 4.3 stops for a decision instead of editing the store.
++- [The validator now issues one query per submission that has a microchip number] → It is an indexed `exists` query on the unique constraint, so the cost is negligible.
++- [Translations into nine languages may be poor] → The sync test checks only that the keys are present. Translations should be reviewed by a speaker before release, as for any new label.
++
++## Migration Plan
++
++1. Deploy the new `schema.sql` files. H2 needs nothing more.
++2. On an existing MySQL database:
++   `ALTER TABLE pets ADD COLUMN microchip_number VARCHAR(15) NULL, ADD CONSTRAINT unique_pet_microchip_number UNIQUE (microchip_number);`
++3. On an existing Postgres database:
++   `ALTER TABLE pets ADD COLUMN IF NOT EXISTS microchip_number TEXT;`
++   `CREATE UNIQUE INDEX IF NOT EXISTS unique_pet_microchip_number ON pets (microchip_number);`
++4. No data is backfilled. Existing pets have no microchip number (F8).
++
++Rollback: deploy the previous build. The extra nullable column is ignored by the old code. To remove the column, drop the constraint first, then the column.
+diff --git a/openspec/changes/pc-301/proposal.md b/openspec/changes/pc-301/proposal.md
+new file mode 100644
+index 0000000..937a219
+--- /dev/null
++++ b/openspec/changes/pc-301/proposal.md
+@@ -0,0 +1,36 @@
++# Proposal
++
++## Why
++
++Reception has no place to record the microchip number implanted in a pet (F1 in `decisions.md`). PC-301 adds that one field to the pet record so it can be entered, corrected and seen. Looking a pet up by its microchip number is a separate ticket (D5).
++
++## What Changes
++
++- A pet gets an optional **microchip number** on both the add form and the edit form (D2, D7).
++- Before validation, the entered value is trimmed and its spaces are removed. After that it must be exactly 15 digits, or the form shows the error "must be 15 digits". Only the digits are stored. Dashes, dots and other characters are not removed. The country and manufacturer code is not checked (D3, D9, D10, D15).
++- A microchip number is unique across all pets of all owners. A duplicate gets "is already in use" and nothing more: no other pet or owner is named (D4, D10, D11). A pet never conflicts with its own number (D14).
++- A malformed number gets the format error only, and a well-formed duplicate gets the duplicate error only. Either error is reported together with the form's other errors (D17).
++- The edit form shows the stored microchip number. An empty field on the edit form removes the stored number (D8).
++- The owner's page shows a "Microchip number" label and the pet's microchip number with each pet's other details. A pet without a number shows the label with an empty value (D6, D16).
++- H2, MySQL and Postgres each get a named unique constraint on the microchip number. A duplicate caught by the database is reported as "is already in use" on the microchip number field (D12).
++- No seeded pet gets a microchip number (F8).
++
++Not in this change: looking up a pet by its microchip number (D5), and the unnamed MySQL owner-and-pet-name constraint (D13, F4). Both need their own tickets.
++
++## Capabilities
++
++### New Capabilities
++
++- `owner-details`: what the owner's page shows about the owner's pets. This change introduces it with the microchip number display (D6, D16). Existing display behaviour (name, birth date, type, F7) is not specified yet.
++
++### Modified Capabilities
++
++- `pets`: adds the microchip number rules for the add and edit forms (optional, format, uniqueness, own number, clearing, error reporting, duplicates caught by the database), plus the edit form showing the stored number. Existing requirements are unchanged. The baseline's Purpose excludes the GET forms. The requirement that the edit form shows the stored number is a GET-form behaviour, so the Purpose needs a one-line update when this change is archived (see `tasks.md`, Workflow follow-up).
++
++## Impact
++
++- **Data**: a new nullable `microchip_number` column and a named unique constraint on the `pets` table in `db/h2/schema.sql`, `db/mysql/schema.sql` and `db/postgres/schema.sql`. `data.sql` is unchanged.
++- **Code**: `Pet` (new field), `PetValidator` (format and uniqueness checks, plus a lookup it does not have today, F6), `PetController` (passes the lookup to the validator, copies the field on edit, maps the new constraint), and a new repository query for pets.
++- **Views**: `pets/createOrUpdatePetForm.html` and `owners/ownerDetails.html`.
++- **Messages**: a new message key for "must be 15 digits" and one for the "Microchip number" label, in `messages.properties` and every locale file that `I18nPropertiesSyncTest` checks. "is already in use" already exists (`messages.properties:4`).
++- **Tests**: the `@WebMvcTest` suites for `PetController` need the new repository as a mock. `PetValidatorTests` builds the validator with no arguments (`PetValidatorTests.java:59`), so it has to change too.
+diff --git a/openspec/changes/pc-301/specs/owner-details/spec.md b/openspec/changes/pc-301/specs/owner-details/spec.md
+new file mode 100644
+index 0000000..8b98096
+--- /dev/null
++++ b/openspec/changes/pc-301/specs/owner-details/spec.md
+@@ -0,0 +1,22 @@
++# Spec Delta
++
++## Purpose
++
++What the owner's page at `/owners/{ownerId}` shows about each of the owner's pets. It covers the microchip number so far. The pet's name, birth date and type are shown too, but those are not specified here yet.
++
++## ADDED Requirements
++
++### Requirement: The owner's page shows each pet's microchip number
++
++The system SHALL show, for each pet on the owner's page, the label "Microchip number" and the pet's microchip number, with the pet's other details. A pet without a microchip number SHALL show the label with an empty value, and no placeholder word.
++
++#### Scenario: A pet with a microchip number
++
++- **WHEN** the owner's page is opened for an owner whose pet "petty" has the microchip number "985141000123456"
++- **THEN** the details of "petty" show the label "Microchip number" with the value "985141000123456"
++
++#### Scenario: A pet without a microchip number
++
++- **WHEN** the owner's page is opened for an owner whose pet "petty" has no microchip number
++- **THEN** the details of "petty" show the label "Microchip number" with an empty value
++- **AND** the value is not a word such as "none"
+diff --git a/openspec/changes/pc-301/specs/pets/spec.md b/openspec/changes/pc-301/specs/pets/spec.md
+new file mode 100644
+index 0000000..32e6f86
+--- /dev/null
++++ b/openspec/changes/pc-301/specs/pets/spec.md
+@@ -0,0 +1,186 @@
++# Spec Delta
++
++## ADDED Requirements
++
++### Requirement: Microchip number is optional
++
++The system SHALL accept a pet without a microchip number on both the add form and the edit form. An empty or blank microchip number SHALL be stored as no microchip number.
++
++#### Scenario: A pet is added without a microchip number
++
++- **WHEN** the add form is submitted with an empty microchip number and a valid name, type and birth date
++- **THEN** the pet is saved with no microchip number
++- **AND** the browser is redirected to the owner's page with the message "New Pet has been Added"
++
++#### Scenario: A blank microchip number counts as none
++
++- **WHEN** the add form is submitted with the microchip number "   " and otherwise valid values
++- **THEN** the pet is saved with no microchip number
++
++#### Scenario: Two pets without a microchip number
++
++- **WHEN** a pet with no microchip number exists and another pet is added without a microchip number
++- **THEN** the second pet is saved
++
++### Requirement: Microchip number is stored as its digits
++
++Before checking a microchip number, the system SHALL trim the entered value and remove every space from it. The system SHALL store only the resulting digits, and SHALL NOT remove any other character.
++
++#### Scenario: Spaces are removed
++
++- **WHEN** the add form is submitted with the microchip number " 985 141 000 123 456 " and otherwise valid values
++- **THEN** the pet is saved with the microchip number "985141000123456"
++
++#### Scenario: Dashes are not removed
++
++- **WHEN** the add form is submitted with the microchip number "985-141-000-123-456"
++- **THEN** the form is shown again with "must be 15 digits" on the microchip number
++- **AND** nothing is saved
++
++### Requirement: Microchip number is exactly 15 digits
++
++The system MUST reject, on either form, a microchip number that is not exactly 15 digits after its spaces are removed, with the error "must be 15 digits" on the microchip number. The system SHALL NOT check the country or manufacturer code in the first three digits.
++
++#### Scenario: Fifteen digits are accepted
++
++- **WHEN** either form is submitted with the microchip number "985141000123456" and otherwise valid values
++- **THEN** the pet is saved with that microchip number
++
++#### Scenario: Any first three digits are accepted
++
++- **WHEN** either form is submitted with the microchip number "000000000000001" and otherwise valid values
++- **THEN** the pet is saved with that microchip number
++
++#### Scenario: Fourteen digits are rejected
++
++- **WHEN** either form is submitted with the microchip number "98514100012345"
++- **THEN** the form is shown again with "must be 15 digits" on the microchip number
++- **AND** nothing is saved
++
++#### Scenario: Sixteen digits are rejected
++
++- **WHEN** either form is submitted with the microchip number "9851410001234567"
++- **THEN** the form is shown again with "must be 15 digits" on the microchip number
++- **AND** nothing is saved
++
++#### Scenario: A 10-character non-ISO number is rejected
++
++- **WHEN** the add form is submitted with the microchip number "0A0139F53B"
++- **THEN** the form is shown again with "must be 15 digits" on the microchip number
++- **AND** nothing is saved
++
++### Requirement: Microchip number is unique across all pets
++
++The system MUST reject a microchip number that another pet already has, whichever owner that pet belongs to, with the error "is already in use" on the microchip number. The error SHALL NOT name or show the other pet, its owner or any of their details.
++
++#### Scenario: A number held by another owner's pet
++
++- **WHEN** a pet of owner A has the microchip number "985141000123456" and the add form for owner B is submitted with " 985141000123456"
++- **THEN** the form is shown again with "is already in use" on the microchip number
++- **AND** nothing is saved
++- **AND** the page shows neither the other pet's name nor owner A's name
++
++#### Scenario: Editing a pet to another pet's number
++
++- **WHEN** the owner has pets "petty" and "doggy", "petty" has the microchip number "985141000123456", and "doggy" is edited to the microchip number "985 141 000 123 456"
++- **THEN** the form is shown again with "is already in use" on the microchip number
++- **AND** nothing is saved
++
++### Requirement: A pet keeps its own microchip number
++
++The system SHALL NOT report a pet's own microchip number as a duplicate, compared after spaces are removed. Saving a pet again with the number it already has SHALL be accepted.
++
++#### Scenario: Saving a pet with its own number
++
++- **WHEN** the pet "petty" has the microchip number "985141000123456" and its edit form is submitted with "985 141 000 123 456" and otherwise valid values
++- **THEN** the edit is saved
++- **AND** "petty" still has the microchip number "985141000123456"
++
++### Requirement: A pet's microchip number can be changed
++
++The system SHALL let the edit form replace a pet's stored microchip number with another one. The new number SHALL be checked by the same rules as on the add form.
++
++#### Scenario: A new number replaces the stored one
++
++- **WHEN** the pet "petty" has the microchip number "985141000123456" and its edit form is submitted with "985141000654321" and otherwise valid values
++- **THEN** "petty" has the microchip number "985141000654321"
++
++#### Scenario: A malformed new number is rejected
++
++- **WHEN** the pet "petty" has the microchip number "985141000123456" and its edit form is submitted with "12345"
++- **THEN** the form is shown again with "must be 15 digits" on the microchip number
++- **AND** "petty" still has the microchip number "985141000123456" in the database
++
++### Requirement: Clearing the microchip number on the edit form removes it
++
++The system SHALL remove a pet's stored microchip number when the edit form is submitted with an empty or blank microchip number.
++
++#### Scenario: The field is cleared
++
++- **WHEN** the pet "petty" has the microchip number "985141000123456" and its edit form is submitted with an empty microchip number and otherwise valid values
++- **THEN** the edit is saved
++- **AND** "petty" has no microchip number
++
++### Requirement: The edit form shows the stored microchip number
++
++The system SHALL fill the microchip number field of the edit form with the pet's stored microchip number, so that an empty field on submission is a deliberate choice. A pet without a microchip number SHALL show an empty field.
++
++#### Scenario: A pet with a number
++
++- **WHEN** the edit form is opened for a pet with the microchip number "985141000123456"
++- **THEN** the microchip number field holds "985141000123456"
++
++#### Scenario: A pet without a number
++
++- **WHEN** the edit form is opened for a pet without a microchip number
++- **THEN** the microchip number field is empty
++
++### Requirement: One microchip number error at a time
++
++The system SHALL report at most one error on the microchip number. A malformed number SHALL get "must be 15 digits" only, and a well-formed duplicate SHALL get "is already in use" only.
++
++#### Scenario: A malformed number is not checked for duplicates
++
++- **WHEN** a pet has the microchip number "985141000123456" and the add form is submitted with "985141000123456-"
++- **THEN** the form is shown again with exactly one error on the microchip number, "must be 15 digits"
++
++#### Scenario: A duplicate gets only the duplicate error
++
++- **WHEN** a pet has the microchip number "985141000123456" and the add form for another owner is submitted with "985141000123456"
++- **THEN** the form is shown again with exactly one error on the microchip number, "is already in use"
++
++### Requirement: Microchip number errors are reported with the other errors
++
++The system SHALL report an error on the microchip number together with every other validation error of the same submission, and SHALL NOT save the pet while any error remains.
++
++#### Scenario: Three errors on the add form
++
++- **WHEN** the add form is submitted with the name of an existing pet of the owner, tomorrow's date and the microchip number "123"
++- **THEN** the form is shown again with three errors: "is already in use" on the name, "invalid date" on the birth date and "must be 15 digits" on the microchip number
++
++#### Scenario: Two errors on the edit form
++
++- **WHEN** a pet is edited with an empty birth date and the microchip number of another owner's pet
++- **THEN** the form is shown again with two errors: "is required" on the birth date and "is already in use" on the microchip number
++
++### Requirement: Duplicate microchip numbers caught by the database
++
++When the database rejects a save because of the unique constraint on the microchip number, the system SHALL show the form again with "is already in use" on the microchip number. The constraint SHALL have the same name on H2, MySQL and Postgres.
++
++#### Scenario: Two simultaneous adds with the same number
++
++- **WHEN** two add requests, for different owners, with the same new microchip number arrive at the same time
++- **THEN** exactly one pet with that microchip number is saved
++- **AND** the other request adds no pet
++
++#### Scenario: The constraint is reported as a duplicate microchip number
++
++- **WHEN** saving the owner fails with a data integrity violation whose message names the microchip number constraint, in any case
++- **THEN** the form is shown again with "is already in use" on the microchip number
++- **AND** the form does not show a duplicate-name error
++
++#### Scenario: The name constraint is still reported on the name
++
++- **WHEN** saving the owner fails with a data integrity violation whose message names `unique_owner_pet_name`
++- **THEN** the form is shown again with "is already in use" on the name
++- **AND** the form does not show an error on the microchip number
+diff --git a/openspec/changes/pc-301/tasks.md b/openspec/changes/pc-301/tasks.md
+new file mode 100644
+index 0000000..230f4b8
+--- /dev/null
++++ b/openspec/changes/pc-301/tasks.md
+@@ -0,0 +1,42 @@
++# Tasks
++
++Baseline: before starting, run `./mvnw test` and note any failures that already exist, so they are not blamed on this change.
++
++## 1. Schema and entity
++
++- [ ] 1.1 Add the nullable `microchip_number` column and the constraint `unique_pet_microchip_number` to `db/h2/schema.sql`, `db/mysql/schema.sql` and `db/postgres/schema.sql`, as in design Decisions 1 and 5. Leave every `data.sql` unchanged. Verify: the app starts on H2 and `./mvnw test -Dtest=ClinicServiceTests` passes.
++- [ ] 1.2 Add `microchipNumber` to `Pet`, with the normalising setter from design Decision 2 (trim, remove spaces, empty becomes `null`). Verify: new unit tests in `PetTests` or `OwnerTests` show that `" 985 141 000 123 456 "` becomes `"985141000123456"`, that `"   "` and `""` become `null`, and that `"985-141-000-123-456"` is kept as it is. Run them with `./mvnw test -Dtest=OwnerTests` (or the new class).
++- [ ] 1.3 Add `PetRepository` with `existsByMicrochipNumber` and `existsByMicrochipNumberAndIdNot`. Verify: a test against H2 in `ClinicServiceTests` shows that both queries find another pet's number, that `existsByMicrochipNumberAndIdNot` does not find the pet's own number, and that two pets with no number can be saved. This covers the scenario "Two pets without a microchip number".
++
++## 2. Validator rules
++
++- [ ] 2.1 Give `PetValidator` a `PetRepository` constructor argument and add the format check `[0-9]{15}` with code `microchipNumber.invalid`. Verify: `PetValidatorTests` covers 15 digits accepted, `000000000000001` accepted, 14 and 16 digits rejected, `0A0139F53B` rejected, a dashed number rejected, and no number accepted. That is the spec requirements "Microchip number is optional", "is stored as its digits" and "is exactly 15 digits".
++- [ ] 2.2 Add the uniqueness check with code `duplicate`. It runs only when the format check passes, with `existsByMicrochipNumber` for a new pet and `existsByMicrochipNumberAndIdNot` for an existing one. Verify: `PetValidatorTests`, with a mocked `PetRepository`, covers another pet's number rejected, the pet's own number accepted, and a malformed number that never reaches the repository and gets exactly one error. That is the spec requirements "unique across all pets", "A pet keeps its own microchip number" and "One microchip number error at a time".
++- [ ] 2.3 Add `microchipNumber` and `microchipNumber.invalid` to `messages.properties` and every `messages_*.properties` except `messages_en`. Verify: `./mvnw test -Dtest=I18nPropertiesSyncTest` passes.
++
++## 3. Pet forms
++
++- [ ] 3.1 Inject `PetRepository` into `PetController` and build the validator with it in `initPetBinder`. Add `@MockitoBean PetRepository` to `PetControllerTests` and `PetControllerCharacterizationTests`. Verify: both classes pass unchanged otherwise, which shows the baseline `pets` behaviour still holds.
++- [ ] 3.2 Copy `microchipNumber`, including `null`, in `updatePetDetails`. Verify: new `PetControllerTests` cases for "A new number replaces the stored one", "The field is cleared" and "Saving a pet with its own number" pass. Also check that the existing `editCopiesNameBirthDateAndTypeOntoOwnersPetWhenInstancesDiffer` still passes.
++- [ ] 3.3 Add the microchip number input to `pets/createOrUpdatePetForm.html`. Verify: `PetControllerTests` asserts that the edit form for a pet with `985141000123456` holds that value and that a pet without a number shows an empty field. `./mvnw test -Dtest=I18nPropertiesSyncTest` still passes.
++- [ ] 3.4 Verify the combined-error scenarios in `PetControllerTests`: three errors on the add form, and two errors on the edit form, including "is already in use" on the microchip number. Verify also that the duplicate response for another owner's number contains neither the other pet's name nor the other owner's name.
++
++## 4. Duplicates caught by the database
++
++- [ ] 4.1 In both POST handlers, map a `DataIntegrityViolationException` that names `unique_pet_microchip_number` (ignoring case) to "is already in use" on `microchipNumber`, before the name check. Verify: new `PetControllerTests` cases for "The constraint is reported as a duplicate microchip number" and "The name constraint is still reported on the name" pass, and `createOtherIntegrityViolationIsRethrown` still passes.
++- [ ] 4.2 Add a race test for two simultaneous adds, for different owners, with the same microchip number to `PetClinicConcurrencyTests`, modelled on `testDuplicatePetNameRaceConditionIsBlocked`. Verify: exactly one pet with the number is saved on H2. Where Docker is available, also run `MySqlIntegrationTests` and `PostgresIntegrationTests`. If Docker is missing they are skipped, so report them as not run rather than as passed.
++- [ ] 4.3 Run `./mvnw test -Dtest=ArchitectureTests`. Verify: it passes. If it fails because of the new `rejectValue` calls from task 4.1, do not edit or regenerate `src/test/resources/archunit_store/`. Stop and raise it with the ticket owner (design Decision 5).
++
++## 5. Owner's page
++
++- [ ] 5.1 Add the "Microchip number" label and value to `owners/ownerDetails.html`, after the type. Verify: `OwnerControllerTests` asserts the label with `985141000123456` for a pet with a number, and the label with an empty value (not "none") for a pet without one. That is the spec `owner-details`.
++
++## 6. Integration check
++
++- [ ] 6.1 Run `./mvnw spring-javaformat:apply` and then the full `./mvnw test`. Verify: the build passes, and no failures appear beyond those noted at the baseline.
++- [ ] 6.2 Run `openspec validate pc-301 --strict`. Verify: it reports the change as valid.
++
++## Workflow follow-up
++
++- When archiving, update the Purpose of `openspec/specs/pets/spec.md`. It says the spec does not cover the GET forms, but the requirement "The edit form shows the stored microchip number" is a GET-form behaviour.
++- Open the two follow-up tickets from `decisions.md`: looking up a pet by its microchip number (D5), and the unnamed MySQL owner-and-pet-name constraint (D13, F4).
+diff --git a/openspec/specs/pets/spec.md b/openspec/specs/pets/spec.md
+new file mode 100644
+index 0000000..3727a33
+--- /dev/null
++++ b/openspec/specs/pets/spec.md
+@@ -0,0 +1,176 @@
++# pets Specification
++
++## Purpose
++
++Adding a pet to an owner and editing an existing pet through the pet form, at `/owners/{ownerId}/pets/new` and `/owners/{ownerId}/pets/{petId}/edit`. This is a baseline of current behaviour, written from characterization tests, for the state the Week 2 class left on 26 October: `he-petclinic` branch `week-2-sensors` with the class runs of e9, e10 and e11 applied. It covers the two POST handlers of `PetController` and the `PetValidator` they use. It does not cover the GET forms, owners, visits or vets.
++
++## Requirements
++
++### Requirement: Add a pet to an owner
++
++The system SHALL save a valid new pet against its owner, then redirect to the owner's page with the message "New Pet has been Added".
++
++#### Scenario: A valid pet is added
++
++- **WHEN** the add form is submitted for an owner with name "Betty", type "hamster" and birth date 2015-02-12
++- **THEN** the owner is saved with one more pet, named "Betty", of type "hamster", born 2015-02-12
++- **AND** the browser is redirected to the owner's page with the message "New Pet has been Added"
++
++### Requirement: Edit a pet in place
++
++The system SHALL apply a valid edit to the existing pet record, keeping its identity and the owner's number of pets, then redirect to the owner's page with the message "Pet details has been edited".
++
++#### Scenario: A valid edit is saved to the same pet
++
++- **WHEN** the edit form for the pet "petty" is submitted with name "Betty", type "snake" and birth date 2015-02-12
++- **THEN** the same pet record has name "Betty", type "snake" and birth date 2015-02-12
++- **AND** the owner has the same number of pets as before
++- **AND** the browser is redirected to the owner's page with the message "Pet details has been edited"
++
++### Requirement: Pet name is required
++
++The system MUST reject a blank pet name on either form with the error "is required" on the name, and SHALL NOT report a blank name as a duplicate.
++
++#### Scenario: Blank name on the add form
++
++- **WHEN** the add form is submitted with the name " " and a valid type and birth date
++- **THEN** the form is shown again with exactly one error, "is required", on the name
++- **AND** nothing is saved
++
++#### Scenario: Blank name on the edit form
++
++- **WHEN** the edit form is submitted with an empty name
++- **THEN** the form is shown again with "is required" on the name
++- **AND** nothing is saved
++
++### Requirement: Pet name is at most 30 characters
++
++The system MUST reject a pet name longer than 30 characters on either form, and SHALL accept a name of exactly 30 characters.
++
++#### Scenario: Thirty characters is accepted
++
++- **WHEN** either form is submitted with a name of 30 characters and otherwise valid values
++- **THEN** the pet is saved and the browser is redirected to the owner's page
++
++#### Scenario: Thirty-one characters is rejected
++
++- **WHEN** either form is submitted with a name of 31 characters
++- **THEN** the form is shown again with an error on the name
++- **AND** nothing is saved
++
++### Requirement: Pet name is unique per owner, ignoring case
++
++The system MUST reject a pet name that another pet of the same owner already has, compared without regard to case, with the error "is already in use" on the name. Renaming a pet to its own name in a different case SHALL be accepted.
++
++#### Scenario: Adding a pet whose name differs only in case
++
++- **WHEN** the owner has a pet named "petty" and the add form is submitted with the name "PETTY"
++- **THEN** the form is shown again with "is already in use" on the name
++- **AND** nothing is saved
++
++#### Scenario: Renaming a pet to another pet's name
++
++- **WHEN** the owner has pets "petty" and "doggy" and "doggy" is edited to the name "PETTY"
++- **THEN** the form is shown again with "is already in use" on the name
++- **AND** nothing is saved
++
++#### Scenario: Renaming a pet to its own name in another case
++
++- **WHEN** the pet "petty" is edited to the name "PETTY"
++- **THEN** the edit is saved
++
++### Requirement: Duplicate names caught by the database
++
++When the database rejects a save because of the unique constraint on owner and pet name, the system SHALL show the form again with "is already in use" on the name. The system MUST NOT report any other data integrity violation as a duplicate name.
++
++#### Scenario: Two simultaneous adds with the same name
++
++- **WHEN** two add requests for the same owner and the same new name arrive at the same time
++- **THEN** exactly one pet with that name is saved
++- **AND** the other request adds no pet
++
++#### Scenario: The constraint is reported as a duplicate name
++
++- **WHEN** saving the owner fails with a data integrity violation whose message names `unique_owner_pet_name`, in any case
++- **THEN** the form is shown again with "is already in use" on the name
++
++#### Scenario: Another integrity violation
++
++- **WHEN** saving the owner fails with a data integrity violation that does not name the owner-and-pet-name constraint
++- **THEN** the request fails with that error
++- **AND** the form does not show a duplicate-name error
++
++### Requirement: Birth date is required
++
++The system MUST reject a missing or empty birth date on either form with the error "is required" on the birth date.
++
++#### Scenario: Empty birth date
++
++- **WHEN** either form is submitted with an empty birth date
++- **THEN** the form is shown again with "is required" on the birth date
++- **AND** nothing is saved
++
++### Requirement: Birth date is a valid date, not in the future
++
++The system MUST reject, on either form, a birth date that is not a date in the format yyyy-MM-dd or that is later than today, with the error "invalid date" on the birth date. A birth date of today SHALL be accepted.
++
++#### Scenario: Today is accepted
++
++- **WHEN** either form is submitted with today's date as the birth date
++- **THEN** the pet is saved
++
++#### Scenario: A future date is rejected on the add form
++
++- **WHEN** the add form is submitted with tomorrow's date as the birth date
++- **THEN** the form is shown again with "invalid date" on the birth date
++- **AND** nothing is saved
++
++#### Scenario: A future date is rejected on the edit form
++
++- **WHEN** the edit form is submitted with a birth date one month from today
++- **THEN** the form is shown again with "invalid date" on the birth date
++- **AND** nothing is saved
++
++#### Scenario: A malformed date is rejected
++
++- **WHEN** the add form is submitted with the birth date "2015/02/12"
++- **THEN** the form is shown again with two errors on the birth date: "invalid date" and "is required"
++
++### Requirement: Pet type is required when adding a pet
++
++The system MUST reject a new pet that has no type, with the error "is required" on the type, and MUST reject a type name that does not match a known pet type.
++
++#### Scenario: No type on the add form
++
++- **WHEN** the add form is submitted without a type
++- **THEN** the form is shown again with "is required" on the type
++- **AND** nothing is saved
++
++#### Scenario: Unknown type on the add form
++
++- **WHEN** the add form is submitted with the type "lizard", which is not a known pet type
++- **THEN** the form is shown again with an error on the type
++
++### Requirement: Validation errors are reported together
++
++The system SHALL report every validation error of a submission at once, in no particular order, and SHALL NOT save the pet while any error remains.
++
++#### Scenario: Three errors on the add form
++
++- **WHEN** the add form is submitted with no type, the name of an existing pet and tomorrow's date
++- **THEN** the form is shown again with three errors: "is required" on the type, "is already in use" on the name and "invalid date" on the birth date
++
++#### Scenario: Two errors on the edit form
++
++- **WHEN** a pet with no stored birth date is edited to the name of another pet, without a birth date
++- **THEN** the form is shown again with two errors: "is required" on the birth date and "is already in use" on the name
++
++### Requirement: The pet id cannot be set from the form
++
++The system MUST ignore an `id` parameter submitted with either form. The pet that is added or edited SHALL be chosen by the URL alone.
++
++#### Scenario: An id parameter on the edit form
++
++- **WHEN** the edit form for pet 1 is submitted with the extra parameter `id=99`
++- **THEN** pet 1 is updated
++- **AND** no pet with id 99 exists afterwards

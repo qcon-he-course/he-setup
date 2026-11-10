@@ -1,0 +1,8 @@
+?? GLOSSARY.md
+?? openspec/changes/pc-301/decisions.md
+?? openspec/changes/pc-301/design.md
+?? openspec/changes/pc-301/proposal.md
+?? openspec/changes/pc-301/specs/owner-details/spec.md
+?? openspec/changes/pc-301/specs/pets/spec.md
+?? openspec/changes/pc-301/tasks.md
+?? openspec/specs/pets/spec.md

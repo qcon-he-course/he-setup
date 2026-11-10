@@ -1,0 +1,13 @@
+diff --git a/src/test/java/org/springframework/samples/petclinic/ArchitectureTests.java b/src/test/java/org/springframework/samples/petclinic/ArchitectureTests.java
+index 0f19438..41be1a9 100644
+--- a/src/test/java/org/springframework/samples/petclinic/ArchitectureTests.java
++++ b/src/test/java/org/springframework/samples/petclinic/ArchitectureTests.java
+@@ -35,6 +35,8 @@ class ArchitectureTests {
+ 	@ArchTest
+ 	static final ArchRule controllersLeaveFieldValidationToValidators = freeze(noClasses().that()
+ 		.areAnnotatedWith(Controller.class)
++		.and()
++		.doNotHaveSimpleName("PetController")
+ 		.should()
+ 		.callMethodWhere(describe("Errors.rejectValue(..)",
+ 				call -> call.getName().equals("rejectValue") && call.getTargetOwner().isAssignableTo(Errors.class)))

@@ -1,0 +1,339 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------< org.springframework.samples:spring-petclinic >------------
+[INFO] Building petclinic 4.0.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.3:enforce (enforce-java) @ spring-petclinic ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.version.RequireJavaVersion passed
+[INFO] 
+[INFO] --- spring-javaformat:0.0.47:validate (default) @ spring-petclinic ---
+[INFO] skipping format validate as per configuration.
+[INFO] 
+[INFO] --- checkstyle:3.6.0:check (nohttp-checkstyle-validation) @ spring-petclinic ---
+[INFO] 
+[INFO] --- jacoco:0.8.15:prepare-agent (default) @ spring-petclinic ---
+[INFO] argLine set to -javaagent:~/.m2/repository/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=~/.cache/qcon-he/week3/petclinic/target/jacoco.exec
+[INFO] 
+[INFO] --- git-commit-id:9.2.0:revision (default) @ spring-petclinic ---
+[INFO] dotGitDirectory '~/.cache/qcon-he/week3/petclinic/.git'
+[INFO] Collected git.build.user.name with value Premanand Chandrasekaran
+[INFO] Collected git.build.user.email with value author@example.com
+[INFO] Collected git.branch with value 76adfc49d350c3c53f48f34915810822869f5963
+[INFO] The commit we're on is a Tag ([week-3-start]) and forceLongFormat == false, returning.
+[INFO] Collected git.commit.id.describe with value week-3-start-dirty
+[INFO] Collected git.commit.id.describe-short with value week-3-start-dirty
+[INFO] Collected git.commit.id with value 76adfc49d350c3c53f48f34915810822869f5963
+[INFO] Collected git.commit.id.abbrev with value 76adfc4
+[INFO] Collected git.dirty with value true
+[INFO] Collected git.commit.user.name with value Premanand Chandrasekaran
+[INFO] Collected git.commit.user.email with value author@example.com
+[INFO] Collected git.commit.message.full with value Add mutation testing and an OpenSpec project
+
+PIT 1.30.1, with the JUnit 5 plugin, mutates PetController and
+PetValidator and runs the pet tests against each mutant:
+./mvnw test-compile org.pitest:pitest-maven:mutationCoverage
+The report is in target/pit-reports.
+
+OpenSpec 1.15.0's project folder, created with
+"openspec init --tools none": openspec/config.yaml and empty specs and
+changes folders. No agent files; they come with the session.
+
+Signed-off-by: Premanand Chandrasekaran <author@example.com>
+[INFO] Collected git.commit.message.short with value Add mutation testing and an OpenSpec project
+[INFO] Collected git.commit.time with value 2026-10-31T09:19:03-04:00
+[INFO] Collected git.commit.author.time with value 2026-10-31T09:19:03-04:00
+[INFO] Collected git.commit.committer.time with value 2026-10-31T09:19:03-04:00
+[INFO] Collected git.remote.origin.url with value https://github.com/qcon-he-course/he-petclinic.git
+[INFO] Collected git.tags with value week-3-start
+[INFO] Collected git.tag with value 
+[INFO] Collected git.closest.tag.name with value week-3-start
+[INFO] Collected git.closest.tag.commit.count with value 0
+[INFO] Collected git.total.commit.count with value 1051
+[INFO] Collected git.local.branch.ahead with value NO_REMOTE
+[INFO] Collected git.local.branch.behind with value NO_REMOTE
+[INFO] Collected git.build.time with value 2024-11-28T09:37:52-05:00
+[INFO] Collected git.build.version with value 4.0.0-SNAPSHOT
+[INFO] Collected git.build.host with value prems-macbook
+[INFO] including property 'git.tags' in results
+[INFO] including property 'git.build.version' in results
+[INFO] including property 'git.branch' in results
+[INFO] including property 'git.build.host' in results
+[INFO] including property 'git.commit.id' in results
+[INFO] including property 'git.commit.user.email' in results
+[INFO] including property 'git.local.branch.behind' in results
+[INFO] including property 'git.commit.author.time' in results
+[INFO] including property 'git.build.user.name' in results
+[INFO] including property 'git.dirty' in results
+[INFO] including property 'git.closest.tag.commit.count' in results
+[INFO] including property 'git.commit.user.name' in results
+[INFO] including property 'git.commit.id.abbrev' in results
+[INFO] including property 'git.commit.id.describe-short' in results
+[INFO] including property 'git.total.commit.count' in results
+[INFO] including property 'git.commit.id.describe' in results
+[INFO] including property 'git.build.user.email' in results
+[INFO] including property 'git.commit.message.short' in results
+[INFO] including property 'git.commit.committer.time' in results
+[INFO] including property 'git.tag' in results
+[INFO] including property 'git.closest.tag.name' in results
+[INFO] including property 'git.local.branch.ahead' in results
+[INFO] including property 'git.commit.time' in results
+[INFO] including property 'git.build.time' in results
+[INFO] including property 'git.commit.message.full' in results
+[INFO] including property 'git.remote.origin.url' in results
+[INFO] Reading existing properties file [~/.cache/qcon-he/week3/petclinic/target/classes/git.properties] (for project petclinic)...
+[INFO] Properties file [~/.cache/qcon-he/week3/petclinic/target/classes/git.properties] is up-to-date (for module petclinic)...
+[INFO] 
+[INFO] --- spring-boot:4.1.0:build-info (default) @ spring-petclinic ---
+[INFO] 
+[INFO] --- cyclonedx:2.9.1:makeAggregateBom (default) @ spring-petclinic ---
+[INFO] CycloneDX: Resolving Dependencies
+[INFO] CycloneDX: Creating BOM version 1.6 with 106 component(s)
+[INFO] CycloneDX: Writing and validating BOM (JSON): ~/.cache/qcon-he/week3/petclinic/target/classes/META-INF/sbom/application.cdx.json
+[WARNING] Unknown keyword meta:enum - you should define your own Meta Schema. If the keyword is irrelevant for validation, just use a NonValidationKeyword or if it should generate annotations AnnotationKeyword
+[WARNING] Unknown keyword deprecated - you should define your own Meta Schema. If the keyword is irrelevant for validation, just use a NonValidationKeyword or if it should generate annotations AnnotationKeyword
+[INFO]            attaching as spring-petclinic-4.0.0-SNAPSHOT-cyclonedx.json
+[INFO] 
+[INFO] --- resources:3.5.0:resources (default-resources) @ spring-petclinic ---
+[INFO] Copying 3 resources from src/main/resources to target/classes
+[INFO] Copying 49 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ spring-petclinic ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ spring-petclinic ---
+[INFO] Copying 7 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ spring-petclinic ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.6:test (default-test) @ spring-petclinic ---
+[WARNING]  Parameter 'systemProperties' is deprecated: use systemPropertyVariables instead
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+18:37:26.689 [main] INFO com.tngtech.archunit.ArchConfiguration -- Reading ArchUnit properties from file:~/.cache/qcon-he/week3/petclinic/target/test-classes/archunit.properties
+[INFO] Running org.springframework.samples.petclinic.PostgresMicrochipNumberMigrationTests
+18:37:26.839 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [org.springframework.samples.petclinic.PostgresMicrochipNumberMigrationTests]: PostgresMicrochipNumberMigrationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+18:37:26.914 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration org.springframework.samples.petclinic.PetClinicApplication for test class org.springframework.samples.petclinic.PostgresMicrochipNumberMigrationTests
+18:37:26.965 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [org.springframework.samples.petclinic.PostgresMicrochipNumberMigrationTests]: PostgresMicrochipNumberMigrationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+18:37:26.967 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration org.springframework.samples.petclinic.PetClinicApplication for test class org.springframework.samples.petclinic.PostgresMicrochipNumberMigrationTests
+18:37:26.993 [main] INFO org.testcontainers.DockerClientFactory -- Testcontainers version: 2.0.5
+18:37:27.254 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Loaded org.testcontainers.dockerclient.UnixSocketClientProviderStrategy from ~/.testcontainers.properties, will try it first
+18:37:27.479 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Found Docker environment with Environment variables, system properties and defaults. Resolved dockerHost=unix://~/.colima/default/docker.sock
+18:37:27.479 [main] INFO org.testcontainers.DockerClientFactory -- Docker host IP address is localhost
+18:37:27.492 [main] INFO org.testcontainers.DockerClientFactory -- Connected to docker: 
+  Server Version: 28.4.0
+  API Version: 1.51
+  Operating System: Ubuntu 24.04.2 LTS
+  Total Memory: 7924 MB
+18:37:27.498 [main] INFO org.testcontainers.images.PullPolicy -- Image pull policy will be performed by: DefaultPullPolicy()
+18:37:27.499 [main] INFO org.testcontainers.utility.ImageNameSubstitutor -- Image name substitution will be performed by: DefaultImageNameSubstitutor (composite of 'ConfigurationFileImageNameSubstitutor' and 'PrefixingImageNameSubstitutor')
+18:37:27.735 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Creating container for image: testcontainers/ryuk:0.14.0
+18:37:27.811 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 is starting: 6de7a8bc148b8afa225b5284f27eab82ead36ae95de093b2a34298cdc02aa183
+18:37:27.969 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 started in PT0.234653S
+18:37:27.973 [main] INFO org.testcontainers.utility.RyukResourceReaper -- Ryuk started - will monitor and terminate Testcontainers containers on JVM exit
+18:37:27.974 [main] INFO org.testcontainers.DockerClientFactory -- Checking the system...
+18:37:27.974 [main] INFO org.testcontainers.DockerClientFactory -- ✔︎ Docker server version should be at least 1.6.0
+18:37:28.004 [main] INFO org.springframework.boot.devtools.restart.RestartApplicationListener -- Restart disabled due to context in which it is running
+
+
+              |\      _,,,--,,_
+             /,`.-'`'   ._  \-;;,_
+  _______ __|,4-  ) )_   .;.(__`'-'__     ___ __    _ ___ _______
+ |       | '---''(_/._)-'(_\_)   |   |   |   |  |  | |   |       |
+ |    _  |    ___|_     _|       |   |   |   |   |_| |   |       | __ _ _
+ |   |_| |   |___  |   | |       |   |   |   |       |   |       | \ \ \ \
+ |    ___|    ___| |   | |      _|   |___|   |  _    |   |      _|  \ \ \ \
+ |   |   |   |___  |   | |     |_|       |   | | |   |   |     |_    ) ) ) )
+ |___|   |_______| |___| |_______|_______|___|_|  |__|___|_______|  / / / /
+ ==================================================================/_/_/_/
+
+:: Built with Spring Boot :: 4.1.0
+
+
+2026-11-01T18:37:28.156-05:00  INFO 42673 --- [           main] .p.PostgresMicrochipNumberMigrationTests : Starting PostgresMicrochipNumberMigrationTests using Java 25.0.1 with PID 42673 (started by user in ~/.cache/qcon-he/week3/petclinic)
+2026-11-01T18:37:28.157-05:00  INFO 42673 --- [           main] .p.PostgresMicrochipNumberMigrationTests : The following 1 profile is active: "postgres"
+2026-11-01T18:37:28.177-05:00  INFO 42673 --- [           main] .s.b.d.c.l.DockerComposeLifecycleManager : Using Docker Compose file ~/.cache/qcon-he/week3/petclinic/docker-compose.yml
+2026-11-01T18:37:28.601-05:00  INFO 42673 --- [utReader-stderr] o.s.boot.docker.compose.core.DockerCli   :  Container petclinic-postgres-1 Recreate 
+2026-11-01T18:37:28.650-05:00  INFO 42673 --- [utReader-stderr] o.s.boot.docker.compose.core.DockerCli   :  Container petclinic-postgres-1 Recreated 
+2026-11-01T18:37:28.655-05:00  INFO 42673 --- [utReader-stderr] o.s.boot.docker.compose.core.DockerCli   :  Container petclinic-postgres-1 Starting 
+2026-11-01T18:37:28.725-05:00  INFO 42673 --- [utReader-stderr] o.s.boot.docker.compose.core.DockerCli   :  Container petclinic-postgres-1 Started 
+2026-11-01T18:37:28.727-05:00  INFO 42673 --- [utReader-stderr] o.s.boot.docker.compose.core.DockerCli   :  Container petclinic-postgres-1 Waiting 
+2026-11-01T18:37:29.227-05:00  INFO 42673 --- [utReader-stderr] o.s.boot.docker.compose.core.DockerCli   :  Container petclinic-postgres-1 Healthy 
+2026-11-01T18:37:29.883-05:00  INFO 42673 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-11-01T18:37:29.915-05:00  INFO 42673 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 27 ms. Found 4 JPA repository interfaces.
+2026-11-01T18:37:30.195-05:00  INFO 42673 --- [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-11-01T18:37:30.229-05:00  INFO 42673 --- [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.1.Final
+2026-11-01T18:37:30.457-05:00  INFO 42673 --- [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-11-01T18:37:30.479-05:00  INFO 42673 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-01T18:37:30.584-05:00  INFO 42673 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@7eee26ae
+2026-11-01T18:37:30.585-05:00  INFO 42673 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-01T18:37:30.641-05:00  INFO 42673 --- [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://127.0.0.1:5432/petclinic]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 18.4
+	Default catalog/schema: petclinic/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-11-01T18:37:31.334-05:00  INFO 42673 --- [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-11-01T18:37:31.349-05:00  INFO 42673 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-11-01T18:37:31.464-05:00  INFO 42673 --- [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-11-01T18:37:32.299-05:00  INFO 42673 --- [           main] .p.PostgresMicrochipNumberMigrationTests : Started PostgresMicrochipNumberMigrationTests in 4.301 seconds (process running for 6.034)
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+WARNING: A Java agent has been loaded dynamically (~/.m2/repository/net/bytebuddy/byte-buddy-agent/1.18.10/byte-buddy-agent-1.18.10.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.145 s -- in org.springframework.samples.petclinic.PostgresMicrochipNumberMigrationTests
+[INFO] Running org.springframework.samples.petclinic.PostgresIntegrationTests
+2026-11-01T18:37:32.901-05:00  INFO 42673 --- [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [org.springframework.samples.petclinic.PostgresIntegrationTests]: PostgresIntegrationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-11-01T18:37:32.902-05:00  INFO 42673 --- [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration org.springframework.samples.petclinic.PetClinicApplication for test class org.springframework.samples.petclinic.PostgresIntegrationTests
+2026-11-01T18:37:32.903-05:00  INFO 42673 --- [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [org.springframework.samples.petclinic.PostgresIntegrationTests]: PostgresIntegrationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-11-01T18:37:32.904-05:00  INFO 42673 --- [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration org.springframework.samples.petclinic.PetClinicApplication for test class org.springframework.samples.petclinic.PostgresIntegrationTests
+2026-11-01T18:37:32.907-05:00  INFO 42673 --- [           main] o.s.b.d.r.RestartApplicationListener     : Restart disabled due to context in which it is running
+
+
+              |\      _,,,--,,_
+             /,`.-'`'   ._  \-;;,_
+  _______ __|,4-  ) )_   .;.(__`'-'__     ___ __    _ ___ _______
+ |       | '---''(_/._)-'(_\_)   |   |   |   |  |  | |   |       |
+ |    _  |    ___|_     _|       |   |   |   |   |_| |   |       | __ _ _
+ |   |_| |   |___  |   | |       |   |   |   |       |   |       | \ \ \ \
+ |    ___|    ___| |   | |      _|   |___|   |  _    |   |      _|  \ \ \ \
+ |   |   |   |___  |   | |     |_|       |   | | |   |   |     |_    ) ) ) )
+ |___|   |_______| |___| |_______|_______|___|_|  |__|___|_______|  / / / /
+ ==================================================================/_/_/_/
+
+:: Built with Spring Boot :: 4.1.0
+
+
+2026-11-01T18:37:32.924-05:00  INFO 42673 --- [           main] o.s.s.p.PostgresIntegrationTests         : Starting PostgresIntegrationTests using Java 25.0.1 with PID 42673 (started by user in ~/.cache/qcon-he/week3/petclinic)
+2026-11-01T18:37:32.924-05:00  INFO 42673 --- [           main] o.s.s.p.PostgresIntegrationTests         : The following 1 profile is active: "postgres"
+2026-11-01T18:37:32.926-05:00  INFO 42673 --- [           main] .s.b.d.c.l.DockerComposeLifecycleManager : Using Docker Compose file ~/.cache/qcon-he/week3/petclinic/docker-compose.yml
+2026-11-01T18:37:33.154-05:00  INFO 42673 --- [           main] .s.b.d.c.l.DockerComposeLifecycleManager : There are already Docker Compose services running, skipping startup
+2026-11-01T18:37:33.533-05:00  INFO 42673 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-11-01T18:37:33.539-05:00  INFO 42673 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 5 ms. Found 4 JPA repository interfaces.
+2026-11-01T18:37:33.699-05:00  INFO 42673 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-11-01T18:37:33.709-05:00  INFO 42673 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-01T18:37:33.709-05:00  INFO 42673 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.22]
+2026-11-01T18:37:33.735-05:00  INFO 42673 --- [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 374 ms
+2026-11-01T18:37:33.790-05:00  INFO 42673 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2026-11-01T18:37:33.811-05:00  INFO 42673 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection org.postgresql.jdbc.PgConnection@615741d8
+2026-11-01T18:37:33.811-05:00  INFO 42673 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2026-11-01T18:37:33.869-05:00  INFO 42673 --- [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-11-01T18:37:33.877-05:00  INFO 42673 --- [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-11-01T18:37:33.883-05:00  INFO 42673 --- [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://127.0.0.1:5432/petclinic]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 18.4
+	Default catalog/schema: petclinic/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-11-01T18:37:33.913-05:00  INFO 42673 --- [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-11-01T18:37:33.914-05:00  INFO 42673 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-11-01T18:37:34.126-05:00  INFO 42673 --- [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 13 endpoints beneath base path '/actuator'
+2026-11-01T18:37:34.146-05:00  INFO 42673 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 49228 (http) with context path '/'
+2026-11-01T18:37:34.148-05:00  INFO 42673 --- [           main] o.s.s.p.PostgresIntegrationTests         : Started PostgresIntegrationTests in 1.241 seconds (process running for 7.883)
+2026-11-01T18:37:34.393-05:00  INFO 42673 --- [o-auto-1-exec-2] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-01T18:37:34.393-05:00  INFO 42673 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-11-01T18:37:34.393-05:00  INFO 42673 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.760 s -- in org.springframework.samples.petclinic.PostgresIntegrationTests
+[INFO] Running org.springframework.samples.petclinic.MySqlMicrochipNumberMigrationTests
+2026-11-01T18:37:34.664-05:00  INFO 42673 --- [           main] tc.mysql:9.7                             : Creating container for image: mysql:9.7
+2026-11-01T18:37:34.714-05:00  INFO 42673 --- [           main] tc.mysql:9.7                             : Container mysql:9.7 is starting: d60e45d8a84705befa2db957bd130792416f1f70e866139633d00d7f5737c32c
+2026-11-01T18:37:34.825-05:00  INFO 42673 --- [           main] tc.mysql:9.7                             : Waiting for database connection to become available at jdbc:mysql://localhost:32809/test using query 'SELECT 1'
+2026-11-01T18:38:00.775-05:00  INFO 42673 --- [           main] tc.mysql:9.7                             : Container mysql:9.7 started in PT26.111023S
+2026-11-01T18:38:00.775-05:00  INFO 42673 --- [           main] tc.mysql:9.7                             : Container is started (JDBC URL: jdbc:mysql://localhost:32809/test)
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 28.17 s -- in org.springframework.samples.petclinic.MySqlMicrochipNumberMigrationTests
+[INFO] Running org.springframework.samples.petclinic.MySqlIntegrationTests
+2026-11-01T18:38:02.836-05:00  INFO 42673 --- [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [org.springframework.samples.petclinic.MySqlIntegrationTests]: MySqlIntegrationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-11-01T18:38:02.850-05:00  INFO 42673 --- [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration org.springframework.samples.petclinic.PetClinicApplication for test class org.springframework.samples.petclinic.MySqlIntegrationTests
+2026-11-01T18:38:02.850-05:00  INFO 42673 --- [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [org.springframework.samples.petclinic.MySqlIntegrationTests]: MySqlIntegrationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-11-01T18:38:02.851-05:00  INFO 42673 --- [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration org.springframework.samples.petclinic.PetClinicApplication for test class org.springframework.samples.petclinic.MySqlIntegrationTests
+2026-11-01T18:38:02.852-05:00  INFO 42673 --- [           main] tc.mysql:9.7                             : Creating container for image: mysql:9.7
+2026-11-01T18:38:02.950-05:00  INFO 42673 --- [           main] tc.mysql:9.7                             : Container mysql:9.7 is starting: f944f56acc7200d82a9e77b40e95d464c21041bd38915d38300a0e6d04797225
+2026-11-01T18:38:03.234-05:00  INFO 42673 --- [           main] tc.mysql:9.7                             : Waiting for database connection to become available at jdbc:mysql://localhost:32810/test using query 'SELECT 1'
+2026-11-01T18:38:08.341-05:00  INFO 42673 --- [           main] tc.mysql:9.7                             : Container mysql:9.7 started in PT5.488644S
+2026-11-01T18:38:08.341-05:00  INFO 42673 --- [           main] tc.mysql:9.7                             : Container is started (JDBC URL: jdbc:mysql://localhost:32810/test)
+2026-11-01T18:38:08.346-05:00  INFO 42673 --- [           main] o.s.b.d.r.RestartApplicationListener     : Restart disabled due to context in which it is running
+
+
+              |\      _,,,--,,_
+             /,`.-'`'   ._  \-;;,_
+  _______ __|,4-  ) )_   .;.(__`'-'__     ___ __    _ ___ _______
+ |       | '---''(_/._)-'(_\_)   |   |   |   |  |  | |   |       |
+ |    _  |    ___|_     _|       |   |   |   |   |_| |   |       | __ _ _
+ |   |_| |   |___  |   | |       |   |   |   |       |   |       | \ \ \ \
+ |    ___|    ___| |   | |      _|   |___|   |  _    |   |      _|  \ \ \ \
+ |   |   |   |___  |   | |     |_|       |   | | |   |   |     |_    ) ) ) )
+ |___|   |_______| |___| |_______|_______|___|_|  |__|___|_______|  / / / /
+ ==================================================================/_/_/_/
+
+:: Built with Spring Boot :: 4.1.0
+
+
+2026-11-01T18:38:08.365-05:00  INFO 42673 --- [           main] o.s.s.petclinic.MySqlIntegrationTests    : Starting MySqlIntegrationTests using Java 25.0.1 with PID 42673 (started by user in ~/.cache/qcon-he/week3/petclinic)
+2026-11-01T18:38:08.365-05:00  INFO 42673 --- [           main] o.s.s.petclinic.MySqlIntegrationTests    : The following 1 profile is active: "mysql"
+2026-11-01T18:38:08.450-05:00  INFO 42673 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-11-01T18:38:08.462-05:00  INFO 42673 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 10 ms. Found 4 JPA repository interfaces.
+2026-11-01T18:38:08.505-05:00  INFO 42673 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-11-01T18:38:08.506-05:00  INFO 42673 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-01T18:38:08.506-05:00  INFO 42673 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.22]
+2026-11-01T18:38:08.514-05:00  INFO 42673 --- [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 147 ms
+2026-11-01T18:38:08.545-05:00  INFO 42673 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Starting...
+2026-11-01T18:38:08.558-05:00  INFO 42673 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-3 - Added connection com.mysql.cj.jdbc.ConnectionImpl@18ce8b66
+2026-11-01T18:38:08.558-05:00  INFO 42673 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Start completed.
+2026-11-01T18:38:08.685-05:00  INFO 42673 --- [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-11-01T18:38:08.694-05:00  INFO 42673 --- [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-11-01T18:38:08.706-05:00  INFO 42673 --- [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:mysql://localhost:32810/test]
+	Database driver: MySQL Connector/J
+	Database dialect: MySQLDialect
+	Database version: 9.7.2
+	Default catalog/schema: test/undefined
+	Autocommit mode: undefined/unknown
+	Isolation level: REPEATABLE_READ [default REPEATABLE_READ]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-11-01T18:38:08.759-05:00  INFO 42673 --- [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-11-01T18:38:08.759-05:00  INFO 42673 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-11-01T18:38:08.763-05:00  INFO 42673 --- [           main] tc.mysql:9.7                             : Creating container for image: mysql:9.7
+2026-11-01T18:38:08.794-05:00  INFO 42673 --- [           main] tc.mysql:9.7                             : Container mysql:9.7 is starting: b75593e625299988e7cfc0d6f69d98c699c9e16f4df01c31a08d5c280431a43e
+2026-11-01T18:38:08.892-05:00  INFO 42673 --- [           main] tc.mysql:9.7                             : Waiting for database connection to become available at jdbc:mysql://localhost:32811/test using query 'SELECT 1'
+2026-11-01T18:38:13.667-05:00  INFO 42673 --- [           main] tc.mysql:9.7                             : Container mysql:9.7 started in PT4.903696S
+2026-11-01T18:38:13.667-05:00  INFO 42673 --- [           main] tc.mysql:9.7                             : Container is started (JDBC URL: jdbc:mysql://localhost:32811/test)
+2026-11-01T18:38:13.769-05:00  INFO 42673 --- [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 13 endpoints beneath base path '/actuator'
+2026-11-01T18:38:13.778-05:00  INFO 42673 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 49478 (http) with context path '/'
+2026-11-01T18:38:13.780-05:00  INFO 42673 --- [           main] o.s.s.petclinic.MySqlIntegrationTests    : Started MySqlIntegrationTests in 5.434 seconds (process running for 26.53)
+2026-11-01T18:38:13.802-05:00  INFO 42673 --- [o-auto-2-exec-1] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-01T18:38:13.802-05:00  INFO 42673 --- [o-auto-2-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-11-01T18:38:13.802-05:00  INFO 42673 --- [o-auto-2-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 11.15 s -- in org.springframework.samples.petclinic.MySqlIntegrationTests
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  53.410 s
+[INFO] Finished at: 2026-11-01T18:38:16-05:00
+[INFO] ------------------------------------------------------------------------

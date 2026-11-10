@@ -1,0 +1,41 @@
+  1 shell   ls -R openspec | head -50 && cat openspec/changes/pc-301/decisions.md && cat GLOSSARY.md && cat openspec/specs
+  2 shell   cat openspec/config.yaml; openspec --version; openspec instructions --help 2>&1 | head -30; openspec status --
+  3 shell   for a in proposal specs design tasks; do echo "=== $a"; openspec instructions $a --change pc-301 2>&1; done
+  4 shell   cd src/main/java/org/springframework/samples/petclinic/owner && cat -n PetController.java PetValidator.java Pe
+  5 shell   cd /work; cat -n src/test/java/org/springframework/samples/petclinic/ArchitectureTests.java | sed -n 1,80p; ca
+  6 shell   cd /work/src/main/resources; sed -n 30,60p db/h2/schema.sql; echo ===MYSQL; sed -n 30,55p db/mysql/schema.sql;
+  7 shell   cd /work; find . -path ./target -prune -o -name 'archunit*' -print -o -path '*archunit_store*' -print | head; 
+  8 shell   cd /work/src/test/resources/archunit_store; cat stored.rules; echo; cat 1cbfc1d1-*; cd /work; ls src/test/java
+  9 shell   cd /work; grep -n -A2 archunit pom.xml; ls ~/.m2/repository/com/tngtech/archunit/ 2>/dev/null; find ~/.m2/repo
+ 10 shell   cd /work; grep -n "void\|assert\|fail" src/test/java/org/springframework/samples/petclinic/system/I18nProperti
+ 11 shell   cd /work; sed -n 36,134p src/test/java/org/springframework/samples/petclinic/system/I18nPropertiesSyncTest.jav
+ 12 edit    openspec/changes/pc-301/proposal.md
+ 13 edit    openspec/changes/pc-301/specs/pets/spec.md
+ 14 edit    openspec/changes/pc-301/specs/owner-details/spec.md
+ 15 shell   cd /work; openspec validate pc-301 --strict 2>&1 | tail -20
+ 16 shell   cd /work/src/test/java/org/springframework/samples/petclinic; ls service; grep -n "class\|@Test\|void \|Testco
+ 17 edit    openspec/changes/pc-301/design.md
+ 18 edit    openspec/changes/pc-301/tasks.md
+ 19 shell   cd /work; openspec validate pc-301 --strict; openspec status --change pc-301 2>&1 | tail -8; grep -rniwE "chip
+
+messages typed by the person: 1
+
+--- final answer ---
+I've written the PC-301 change from the decisions log, and `openspec validate pc-301 --strict` reports `Change 'pc-301' is valid`. All four parts are done: proposal, specs, design and tasks. No code or tests were changed: `git status` shows changes only under `openspec/` plus the glossary, which was already untracked when we started.
+
+**What I wrote** (in `openspec/changes/pc-301/`)
+- **`proposal.md`**: the scope, mapped to decisions D1–D18, with the two follow-ups (D5 and D13) kept out.
+- **`specs/pets/spec.md`**: 11 new requirements, each with scenarios: the number is optional, spaces are removed and only the digits are stored, exactly 15 digits, unique across all owners, a pet never conflicts with its own number, the number can be changed, clearing it removes it, the edit form shows the stored number, at most one error on the field, errors reported together, and duplicates caught by the database. None of the existing requirements is changed.
+- **`specs/owner-details/spec.md`**: a new capability for D6 and D16 (the "Microchip number" label, with an empty value when a pet has none). The `pets` spec's own Purpose excludes the owner's page, so this needed its own spec.
+- **`design.md`** and **`tasks.md`**: 6 groups of tasks. Each group adds its own tests, and the final group is the full build and validation.
+
+**Design choices you may want to look at** (D12 and D18 left these to me)
+1. **Where uniqueness is checked:** in `PetValidator`, using a new `PetRepository` with two `exists` queries. Two are needed because a single query that excludes the pet's own id would never find a duplicate when adding a pet, since a new pet has no id yet. VERIFIED that the id can't be set from the form (`PetController.java:96`).
+2. **No number is stored as NULL, never as an empty string.** INFERRED from how databases handle unique columns: they allow any number of NULLs but only one empty string, so a second pet without a number would otherwise count as a duplicate.
+3. **Duplicates caught by the database are handled in the controller**, alongside the existing pet-name handling. This adds two `rejectValue` calls, which the frozen architecture rule (`ArchitectureTests.java:36-43`) is meant to stop. I expect the rule's frozen list to accept them, because it ignores line numbers by default, but that is INFERRED and not tested. Task 4.3 says to stop and ask you if `ArchitectureTests` fails, rather than edit the frozen list. If you'd rather settle this now, say so.
+
+**Things I checked that affect the work**
+- Existing MySQL and Postgres databases won't get the new column on their own: their schema scripts use `CREATE TABLE IF NOT EXISTS`, which skips a table that already exists (VERIFIED, `db/mysql/schema.sql:38`, `db/postgres/schema.sql:36`). The design's Migration Plan gives the `ALTER TABLE` statements.
+- Every new message has to go into all 9 locale files other than `messages_en`. This confirms F9 in the log, which was only inferred (VERIFIED, `I18nPropertiesSyncTest.java:112-127`).
+
+**For when you archive:** the `pets` spec's Purpose says it doesn't cover the GET forms. "The edit form shows the stored microchip number" is a GET-form behaviour, so the Purpose needs a one-line update then. This is listed under Workflow follow-up in `tasks.md`.

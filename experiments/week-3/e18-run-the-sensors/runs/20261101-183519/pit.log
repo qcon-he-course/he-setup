@@ -1,0 +1,150 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------< org.springframework.samples:spring-petclinic >------------
+[INFO] Building petclinic 4.0.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- pitest:1.30.1:mutationCoverage (default-cli) @ spring-petclinic ---
+[INFO] Root dir is : /work
+[INFO] Found plugin : Default csv report plugin
+[INFO] Found plugin : Default xml report plugin
+[INFO] Found plugin : Log progress during mutation analysis
+[INFO] Found plugin : Default html report plugin
+[INFO] Found plugin : Static initializer code detector plugin
+[INFO] Found plugin : Excluded annotations plugin
+[INFO] Found plugin : Try with resources filter
+[INFO] Found plugin : Inlined finally block filter plugin
+[INFO] Found plugin : Implicit null check filter
+[INFO] Found plugin : Method reference null check filter
+[INFO] Found plugin : For each loop filter
+[INFO] Found plugin : Enum junk filter
+[INFO] Found plugin : Record junk mutation filter
+[INFO] Found plugin : String switch filter
+[INFO] Found plugin : Assertions filter
+[INFO] Found plugin : Enum switch filter
+[INFO] Found plugin : Logging calls filter
+[INFO] Found plugin : Infinite for loop filter
+[INFO] Found plugin : Long running iterator loop filter
+[INFO] Found plugin : For loop counter filter
+[INFO] Found plugin : Kotlin junk mutations filter
+[INFO] Found plugin : Groovy junk mutations filter
+[INFO] Found plugin : Max mutations per class limit
+[INFO] Found plugin : Equals shortcut equivalent mutant filter
+[INFO] Found plugin : Trivial return vals equivalence filter
+[INFO] Found plugin : Filters mutants with line number <= 1
+[INFO] Found plugin : Division by one equivalent mutant filter
+[INFO] Found plugin : Lombok junk mutations filter
+[INFO] Found plugin : Filter mutations to defensive wrappers such as unmodifiableCollection on return or field write
+[INFO] Found plugin : Final field null assignment equivalent mutant filter
+[INFO] Found plugin : Mutant export plugin
+[INFO] Found plugin : Auto add java.awt.headless=true to keep keyboard focus on Mac OS
+[INFO] Found plugin : Auto set number of threads based on machine
+[INFO] Found plugin : Automatically add -ea to launch args to enable assertions
+[INFO] Found plugin : Default build verifier
+[INFO] Found plugin : Detect missing JUnit5 plugin
+[INFO] Found plugin : Detect missing TestNG plugin
+[INFO] Found plugin : Detect missing kotlin plugin
+[INFO] Found plugin : Detect missing spring plugin
+[INFO] Found plugin : Default coverage exporter
+[INFO] Found plugin : Basic test statistics
+[INFO] Found shared classpath plugin : Default mutation engine
+[INFO] Found shared classpath plugin : JUnit 5 test framework support
+[INFO] Found shared classpath plugin : JUnit plugin
+[INFO] Found shared classpath plugin : Support for mocking frameworks using javassist
+[INFO] Found shared classpath plugin : Disable JaCoCo
+[INFO] Found shared classpath plugin : Normalise record attributes
+[INFO] Found shared classpath plugin : Reset environment for javassist
+[INFO] Available mutators : EXPERIMENTAL_ARGUMENT_PROPAGATION,FALSE_RETURNS,TRUE_RETURNS,CONDITIONALS_BOUNDARY,CONSTRUCTOR_CALLS,EMPTY_RETURNS,INCREMENTS,INLINE_CONSTS,INVERT_NEGS,MATH,NEGATE_CONDITIONALS,NON_VOID_METHOD_CALLS,NULL_RETURNS,PRIMITIVE_RETURNS,REMOVE_CONDITIONALS_EQUAL_IF,REMOVE_CONDITIONALS_EQUAL_ELSE,REMOVE_CONDITIONALS_ORDER_IF,REMOVE_CONDITIONALS_ORDER_ELSE,VOID_METHOD_CALLS,EXPERIMENTAL_BIG_DECIMAL,EXPERIMENTAL_BIG_INTEGER,EXPERIMENTAL_MEMBER_VARIABLE,EXPERIMENTAL_NAKED_RECEIVER,REMOVE_INCREMENTS,EXPERIMENTAL_SWITCH
+[INFO] Adding org.pitest:pitest-junit5-plugin to SUT classpath
+[INFO] Adding org.pitest:pitest to SUT classpath
+[INFO] Auto adding org.junit.platform:junit-platform-launcher:jar:6.0.3 < central (https://repo.maven.apache.org/maven2, default, releases) to classpath.
+[INFO] Mutating from /work/target/classes
+11:36:27 PM PIT >> INFO : Verbose logging is disabled. If you encounter a problem, please enable it before reporting an issue.
+11:36:27 PM PIT >> INFO : Created 2 mutation test units in pre scan
+11:36:27 PM PIT >> INFO : Sending 5 test classes to minion
+11:36:27 PM PIT >> INFO : Sent tests to minion
+11:36:29 PM PIT >> INFO : MINION : OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-11:36:31 PM PIT >> INFO : Calculated coverage in 3 seconds.
+11:36:31 PM PIT >> INFO : 0 tests took longer than 2000 ms
+11:36:31 PM PIT >> INFO : Slowest test ([engine:junit-jupiter]/[class:org.springframework.samples.petclinic.owner.PetControllerCharacterizationTests]/[method:editMissingBirthDateIsRequiredAndNotSaved()]) took 275 ms
+11:36:31 PM PIT >> INFO : Largest test ([engine:junit-jupiter]/[class:org.springframework.samples.petclinic.owner.PetControllerTests]/[nested-class:MicrochipNumber]/[method:editNameConstraintIsStillReportedOnNameOnly()]) covered 99 blocks
+11:36:31 PM PIT >> INFO : Created 2 mutation test units
+/-11:36:49 PM PIT >> INFO : Completed in 21 seconds
+================================================================================
+- Mutators
+================================================================================
+> org.pitest.mutationtest.engine.gregor.mutators.ConditionalsBoundaryMutator
+>> Generated 1 Killed 1 (100%)
+> KILLED 1 SURVIVED 0 TIMED_OUT 0 NON_VIABLE 0 
+> MEMORY_ERROR 0 NOT_STARTED 0 STARTED 0 RUN_ERROR 0 
+> NO_COVERAGE 0 EQUIVALENT 0 
+--------------------------------------------------------------------------------
+> org.pitest.mutationtest.engine.gregor.mutators.VoidMethodCallMutator
+>> Generated 26 Killed 22 (85%)
+> KILLED 22 SURVIVED 3 TIMED_OUT 0 NON_VIABLE 0 
+> MEMORY_ERROR 0 NOT_STARTED 0 STARTED 0 RUN_ERROR 0 
+> NO_COVERAGE 1 EQUIVALENT 0 
+--------------------------------------------------------------------------------
+> org.pitest.mutationtest.engine.gregor.mutators.returns.BooleanTrueReturnValsMutator
+>> Generated 7 Killed 7 (100%)
+> KILLED 7 SURVIVED 0 TIMED_OUT 0 NON_VIABLE 0 
+> MEMORY_ERROR 0 NOT_STARTED 0 STARTED 0 RUN_ERROR 0 
+> NO_COVERAGE 0 EQUIVALENT 0 
+--------------------------------------------------------------------------------
+> org.pitest.mutationtest.engine.gregor.mutators.returns.NullReturnValsMutator
+>> Generated 5 Killed 3 (60%)
+> KILLED 3 SURVIVED 0 TIMED_OUT 0 NON_VIABLE 0 
+> MEMORY_ERROR 0 NOT_STARTED 0 STARTED 0 RUN_ERROR 0 
+> NO_COVERAGE 2 EQUIVALENT 0 
+--------------------------------------------------------------------------------
+> org.pitest.mutationtest.engine.gregor.mutators.returns.EmptyObjectReturnValsMutator
+>> Generated 11 Killed 10 (91%)
+> KILLED 10 SURVIVED 1 TIMED_OUT 0 NON_VIABLE 0 
+> MEMORY_ERROR 0 NOT_STARTED 0 STARTED 0 RUN_ERROR 0 
+> NO_COVERAGE 0 EQUIVALENT 0 
+--------------------------------------------------------------------------------
+> org.pitest.mutationtest.engine.gregor.mutators.returns.BooleanFalseReturnValsMutator
+>> Generated 3 Killed 3 (100%)
+> KILLED 3 SURVIVED 0 TIMED_OUT 0 NON_VIABLE 0 
+> MEMORY_ERROR 0 NOT_STARTED 0 STARTED 0 RUN_ERROR 0 
+> NO_COVERAGE 0 EQUIVALENT 0 
+--------------------------------------------------------------------------------
+> org.pitest.mutationtest.engine.gregor.mutators.NegateConditionalsMutator
+>> Generated 30 Killed 30 (100%)
+> KILLED 30 SURVIVED 0 TIMED_OUT 0 NON_VIABLE 0 
+> MEMORY_ERROR 0 NOT_STARTED 0 STARTED 0 RUN_ERROR 0 
+> NO_COVERAGE 0 EQUIVALENT 0 
+--------------------------------------------------------------------------------
+================================================================================
+- Timings
+================================================================================
+> pre-scan for mutations : < 1 second
+> scan classpath : < 1 second
+> coverage and dependency analysis : 3 seconds
+> build mutation tests : < 1 second
+> run mutation analysis : 18 seconds
+--------------------------------------------------------------------------------
+> Total  : 21 seconds
+--------------------------------------------------------------------------------
+> 0 tests took longer than 2000 ms
+> Slowest test ([engine:junit-jupiter]/[class:org.springframework.samples.petclinic.owner.PetControllerCharacterizationTests]/[method:editMissingBirthDateIsRequiredAndNotSaved()]) took 275 ms
+> Largest test ([engine:junit-jupiter]/[class:org.springframework.samples.petclinic.owner.PetControllerTests]/[nested-class:MicrochipNumber]/[method:editNameConstraintIsStillReportedOnNameOnly()]) covered 99 blocks
+================================================================================
+- Statistics
+================================================================================
+>> Line Coverage (for mutated classes only): 103/104 (99%)
+>> 5 tests examined
+>> Generated 83 mutations Killed 76 (92%)
+>> Mutations with no coverage 3. Test strength 95%
+>> Ran 313 tests (3.77 tests per mutation)
+Enhanced functionality available at https://www.arcmutate.com/
+
+Build messages:- 
+* Project uses Spring, but the Arcmutate Spring plugin is not present. (https://docs.arcmutate.com/docs/spring.html)
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  22.617 s
+[INFO] Finished at: 2026-11-01T23:36:49Z
+[INFO] ------------------------------------------------------------------------

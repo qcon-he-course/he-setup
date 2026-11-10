@@ -1,0 +1,3 @@
+?? GLOSSARY.md
+?? openspec/changes/pc-301/decisions.md
+?? openspec/specs/pets/spec.md

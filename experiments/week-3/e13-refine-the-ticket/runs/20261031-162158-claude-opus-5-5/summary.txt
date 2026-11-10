@@ -1,0 +1,21 @@
+  1 skill   refine-requirement
+  2 shell   cd /work; ls; ls GLOSSARY.md docs/adr openspec/changes 2>&1; find openspec -type f; find src -path '*owner*' -
+  3 shell   cd /work/src/main; ls java/org/springframework/samples/petclinic/owner; cat java/org/springframework/samples/p
+  4 shell   cd /work/src/main; grep -n -i -A10 'CREATE TABLE.*pets' resources/db/mysql/schema.sql resources/db/postgres/sc
+  5 edit    openspec/changes/pc-301/decisions.md
+  6 edit    GLOSSARY.md
+  7 shell   cd /work/src/main/resources; grep -n 'duplicate\|required\|typeMismatch' messages/messages.properties
+  8 edit    openspec/changes/pc-301/decisions.md
+  9 edit    openspec/changes/pc-301/decisions.md
+ 10 edit    openspec/changes/pc-301/decisions.md
+ 11 edit    openspec/changes/pc-301/decisions.md
+ 12 edit    openspec/changes/pc-301/decisions.md
+
+messages typed by the person: 5
+
+--- final answer ---
+Good, we agree, so refining PC-301 is finished. I added your last point to the decisions log as D18: where the uniqueness check lives in the code is decided when the change is designed.
+
+F6 in the log matters for that choice. An ArchUnit rule doesn't let the controller reject a field itself, and `PetValidator` can't reach the database, so the duplicate check needs a new path to stored pets.
+
+All the decisions and facts are in `openspec/changes/pc-301/decisions.md`, and the new term is in `GLOSSARY.md`. I haven't committed either file. Next is writing the spec for the change from that log.

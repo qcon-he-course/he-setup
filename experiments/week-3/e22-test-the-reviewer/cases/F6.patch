@@ -1,0 +1,124 @@
+diff --git a/src/main/java/org/springframework/samples/petclinic/owner/OwnerRepository.java b/src/main/java/org/springframework/samples/petclinic/owner/OwnerRepository.java
+index b37f172..a4ecd98 100644
+--- a/src/main/java/org/springframework/samples/petclinic/owner/OwnerRepository.java
++++ b/src/main/java/org/springframework/samples/petclinic/owner/OwnerRepository.java
+@@ -84,4 +84,13 @@ public interface OwnerRepository extends JpaRepository<Owner, Integer> {
+ 	boolean existsAnotherPetWithMicrochipNumber(@Param("microchipNumber") String microchipNumber,
+ 			@Param("petId") Integer petId);
+ 
++	/**
++	 * The last name of the owner whose pet has the given microchip number, if any. It
++	 * loads no owner.
++	 * @param microchipNumber the normalised microchip number
++	 * @return the owner's last name, or empty
++	 */
++	@Query("SELECT owner.lastName FROM Owner owner JOIN owner.pets pet WHERE pet.microchipNumber = :microchipNumber")
++	Optional<String> findOwnerLastNameWithMicrochipNumber(@Param("microchipNumber") String microchipNumber);
++
+ }
+diff --git a/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java b/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
+index 58966ab..a207771 100644
+--- a/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
++++ b/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
+@@ -82,7 +82,10 @@ public class PetValidator implements Validator {
+ 				errors.rejectValue(MICROCHIP_NUMBER, "microchipNumber.invalid");
+ 			}
+ 			else if (isMicrochipNumberTakenByAnotherPet(pet)) {
+-				rejectDuplicateMicrochipNumber(errors);
++				// Name the holder, so that reception can find the pet's record.
++				String holder = this.owners.findOwnerLastNameWithMicrochipNumber(microchipNumber)
++					.orElse("another owner");
++				errors.rejectValue(MICROCHIP_NUMBER, "duplicate", new Object[] { holder }, null);
+ 			}
+ 		}
+ 	}
+diff --git a/src/main/resources/messages/messages.properties b/src/main/resources/messages/messages.properties
+index b190bc1..13cac03 100644
+--- a/src/main/resources/messages/messages.properties
++++ b/src/main/resources/messages/messages.properties
+@@ -52,3 +52,4 @@ error.500=An internal server error occurred.
+ error.general=An unexpected error occurred.
+ microchipNumber=Microchip number
+ microchipNumber.invalid=must be 15 digits
++duplicate.pet.microchipNumber=is already in use by a pet of {0}
+diff --git a/src/main/resources/messages/messages_de.properties b/src/main/resources/messages/messages_de.properties
+index 5c74e7d..70cbc04 100644
+--- a/src/main/resources/messages/messages_de.properties
++++ b/src/main/resources/messages/messages_de.properties
+@@ -52,3 +52,4 @@ error.500=Ein interner Serverfehler ist aufgetreten.
+ error.general=Ein unerwarteter Fehler ist aufgetreten.
+ microchipNumber=Mikrochipnummer
+ microchipNumber.invalid=muss aus 15 Ziffern bestehen
++duplicate.pet.microchipNumber=is already in use by a pet of {0}
+diff --git a/src/main/resources/messages/messages_es.properties b/src/main/resources/messages/messages_es.properties
+index 116d0bb..2357139 100644
+--- a/src/main/resources/messages/messages_es.properties
++++ b/src/main/resources/messages/messages_es.properties
+@@ -52,3 +52,4 @@ error.500=Ocurrió un error interno del servidor.
+ error.general=Ocurrió un error inesperado.
+ microchipNumber=Número de microchip
+ microchipNumber.invalid=debe tener 15 dígitos
++duplicate.pet.microchipNumber=is already in use by a pet of {0}
+diff --git a/src/main/resources/messages/messages_fa.properties b/src/main/resources/messages/messages_fa.properties
+index 4407d0a..297c5bf 100644
+--- a/src/main/resources/messages/messages_fa.properties
++++ b/src/main/resources/messages/messages_fa.properties
+@@ -52,3 +52,4 @@ error.500=خطای داخلی سرور رخ داد.
+ error.general=خطای غیرمنتظره‌ای رخ داد.
+ microchipNumber=شماره میکروچیپ
+ microchipNumber.invalid=باید ۱۵ رقم باشد
++duplicate.pet.microchipNumber=is already in use by a pet of {0}
+diff --git a/src/main/resources/messages/messages_hi.properties b/src/main/resources/messages/messages_hi.properties
+index e51f53b..8e09035 100644
+--- a/src/main/resources/messages/messages_hi.properties
++++ b/src/main/resources/messages/messages_hi.properties
+@@ -54,3 +54,4 @@ error.500=\u090F\u0915 \u0906\u0902\u0924\u0930\u093F\u0915 \u0938\u0930\u094D\u
+ error.general=\u090F\u0915 \u0905\u092A\u094D\u0930\u0924\u094D\u092F\u093E\u0936\u093F\u0924 \u0924\u094D\u0930\u0941\u091F\u093F \u0939\u0941\u0906\u0964
+ microchipNumber=\u092E\u093E\u0907\u0915\u094D\u0930\u094B\u091A\u093F\u092A \u0938\u0902\u0916\u094D\u092F\u093E
+ microchipNumber.invalid=15 \u0905\u0902\u0915\u094B\u0902 \u0915\u093E \u0939\u094B\u0928\u093E \u091A\u093E\u0939\u093F\u090F
++duplicate.pet.microchipNumber=is already in use by a pet of {0}
+diff --git a/src/main/resources/messages/messages_ja.properties b/src/main/resources/messages/messages_ja.properties
+index 312bf99..697037a 100644
+--- a/src/main/resources/messages/messages_ja.properties
++++ b/src/main/resources/messages/messages_ja.properties
+@@ -54,3 +54,4 @@ error.500=サーバー内部エラーが発生しました。
+ error.general=予期しないエラーが発生しました。
+ microchipNumber=マイクロチップ番号
+ microchipNumber.invalid=15桁の数字で入力してください
++duplicate.pet.microchipNumber=is already in use by a pet of {0}
+diff --git a/src/main/resources/messages/messages_ko.properties b/src/main/resources/messages/messages_ko.properties
+index 5d16ac5..b78917d 100644
+--- a/src/main/resources/messages/messages_ko.properties
++++ b/src/main/resources/messages/messages_ko.properties
+@@ -52,3 +52,4 @@ error.500=서버 내부 오류가 발생했습니다.
+ error.general=알 수 없는 오류가 발생했습니다.
+ microchipNumber=마이크로칩 번호
+ microchipNumber.invalid=15자리 숫자여야 합니다
++duplicate.pet.microchipNumber=is already in use by a pet of {0}
+diff --git a/src/main/resources/messages/messages_pt.properties b/src/main/resources/messages/messages_pt.properties
+index 51387ad..3752001 100644
+--- a/src/main/resources/messages/messages_pt.properties
++++ b/src/main/resources/messages/messages_pt.properties
+@@ -52,3 +52,4 @@ error.500=Ocorreu um erro interno no servidor.
+ error.general=Ocorreu um erro inesperado.
+ microchipNumber=Número do microchip
+ microchipNumber.invalid=deve ter 15 dígitos
++duplicate.pet.microchipNumber=is already in use by a pet of {0}
+diff --git a/src/main/resources/messages/messages_ru.properties b/src/main/resources/messages/messages_ru.properties
+index 0d53955..7d8ef85 100644
+--- a/src/main/resources/messages/messages_ru.properties
++++ b/src/main/resources/messages/messages_ru.properties
+@@ -52,3 +52,4 @@ error.500=Произошла внутренняя ошибка сервера.
+ error.general=Произошла непредвиденная ошибка.
+ microchipNumber=Номер микрочипа
+ microchipNumber.invalid=должен содержать 15 цифр
++duplicate.pet.microchipNumber=is already in use by a pet of {0}
+diff --git a/src/main/resources/messages/messages_tr.properties b/src/main/resources/messages/messages_tr.properties
+index cc5a59c..eb61f0a 100644
+--- a/src/main/resources/messages/messages_tr.properties
++++ b/src/main/resources/messages/messages_tr.properties
+@@ -52,3 +52,4 @@ error.500=Sunucuda dahili bir hata oluştu.
+ error.general=Beklenmeyen bir hata oluştu.
+ microchipNumber=Mikroçip numarası
+ microchipNumber.invalid=15 haneli olmalıdır
++duplicate.pet.microchipNumber=is already in use by a pet of {0}

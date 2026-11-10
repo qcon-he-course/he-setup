@@ -1,0 +1,17 @@
+diff --git a/pom.xml b/pom.xml
+index 0bffc35..26aac25 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -38,6 +38,12 @@
+   </properties>
+ 
+   <dependencies>
++    <!-- ISO 11784/11785 microchip number checks -->
++    <dependency>
++      <groupId>org.iso.animalid</groupId>
++      <artifactId>iso11784-validator</artifactId>
++      <version>2.3.1</version>
++    </dependency>
+     <!-- Spring and Spring Boot dependencies -->
+     <dependency>
+       <groupId>org.springframework.boot</groupId>

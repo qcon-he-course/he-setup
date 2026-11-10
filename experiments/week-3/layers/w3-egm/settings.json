@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//ladder/layers/w3-egm/egm/**)",
+      "Write(//work/target/egm/**)",
+      "Edit(//work/target/egm/**)"
+    ]
+  }
+}

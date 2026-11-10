@@ -1,0 +1,3 @@
+Refine this ticket with me before we write the OpenSpec change. The change name is pc-301. The baseline spec of the pet forms is in openspec/specs/pets/spec.md.
+
+PC-301: Record a pet's microchip number. Reception wants to record each pet's microchip number when they add or edit a pet, so we can identify a pet when it is scanned. The same chip shouldn't end up on two pets.

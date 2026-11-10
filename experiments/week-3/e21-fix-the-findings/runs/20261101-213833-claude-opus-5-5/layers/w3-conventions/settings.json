@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "/ladder/layers/w3-conventions/check-conventions.sh", "timeout": 180 }
+        ]
+      }
+    ]
+  }
+}

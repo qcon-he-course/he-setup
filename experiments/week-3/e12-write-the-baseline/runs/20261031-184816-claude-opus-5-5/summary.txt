@@ -1,0 +1,324 @@
+  1 shell   ls; ls openspec openspec/*; cat GLOSSARY.md 2>/dev/null; ls src/test/java/org/springframework/samples/petclini
+  2 shell   cd /work; grep -n "getPet\|addPet" -A12 src/main/java/org/springframework/samples/petclinic/owner/Owner.java |
+  3 shell   cd /work; cat src/main/resources/templates/fragments/inputField.html src/main/resources/templates/fragments/se
+  4 shell   cd /work; openspec --help 2>&1 | head -40; openspec instructions --help 2>&1 | head -20
+  5 shell   cd /work; ./mvnw -q spring-boot:run -Dspring-boot.run.arguments=--server.port=8091 > /tmp/claude-1000/-work/a0
+  6 shell   for i in $(seq 1 60); do curl -s -o /dev/null -w "%{http_code}" localhost:8091/owners/1 2>/dev/null | grep -q 
+  7 shell   tail -40 /tmp/claude-1000/-work/a07d215d-c340-4417-848d-af08d5e3024b/scratchpad/app.log
+  8 shell   mkdir -p /tmp/claude-1000/-work/a07d215d-c340-4417-848d-af08d5e3024b/scratchpad; cat /tmp/claude-1000/-work/a0
+  9 shell   cd /work; ./mvnw -q spring-boot:run -Dspring-boot.run.arguments=--server.port=8091 > /tmp/claude-1000/-work/a0
+ 10 shell   for i in $(seq 1 60); do curl -s -o /dev/null -w "%{http_code}" localhost:8091/owners/1 2>/dev/null | grep -q 
+ 11 shell   cd /tmp; T=$(date -d tomorrow +%F); N=$(date +%F) p(){ echo "== $1"; shift; curl -s -o /tmp/claude-1000/-work/
+ 12 shell   S=/tmp/claude-1000/-work/a07d215d-c340-4417-848d-af08d5e3024b/scratchpad; U=localhost:8091/owners/1 curl -s -d
+ 13 shell   curl -s localhost:8091/owners/1 | grep -A5 "<dd>Fluff2" ; pkill -f "spring-boot:run" ; pkill -f PetClinicAppli
+ 14 edit    openspec/specs/pets/spec.md
+ 15 shell   cd /work; openspec validate pets --type spec --strict; echo "exit=$?"; git status --short
+ 16 edit    openspec/specs/pets/spec.md
+ 17 edit    openspec/specs/pets/spec.md
+ 18 edit    openspec/specs/pets/spec.md
+ 19 edit    openspec/specs/pets/spec.md
+ 20 edit    openspec/specs/pets/spec.md
+ 21 shell   cd /work; openspec validate pets --type spec --strict; echo "exit=$?"; git status --short
+ 22 shell   cd /work; grep -c "ProcessCreationFormHasErrors\.\|ProcessUpdateFormHasErrors\.\|ValidateHasErrors\." openspec
+ 23 edit    openspec/specs/pets/spec.md
+ 24 edit    openspec/specs/pets/spec.md
+ 25 edit    openspec/specs/pets/spec.md
+ 26 edit    openspec/specs/pets/spec.md
+ 27 shell   cd /work; openspec validate pets --type spec --strict; echo "exit=$?"; openspec show pets --type spec --json 2
+ 28 shell   cd /work; openspec show pets --type spec --json | python3 -c " import json,sys; d=json.load(sys.stdin) for i,r
+ 29 edit    openspec/specs/pets/spec.md
+ 30 edit    openspec/specs/pets/spec.md
+ 31 shell   cd /work; openspec validate pets --type spec --strict; echo "exit=$?"; openspec show pets --type spec --json |
+ 32 edit    openspec/specs/pets/spec.md
+ 33 shell   cd /work; openspec validate pets --type spec --strict; echo "exit=$?"; git status --short
+
+messages typed by the person: 4
+
+--- final answer ---
+Here is `openspec/specs/pets/spec.md` as it stands:
+
+```markdown
+# pets Specification
+
+## Purpose
+
+Baseline of how the add-pet and edit-pet forms behave today. An owner's pets are added
+from "Add New Pet" on the owner page and changed from "Edit Pet" next to each pet. Both
+links open the same form with the fields Name, Birth Date and Type. The behaviour here is
+taken from the characterization tests, which describe what the forms do now, not what
+they should do. Error texts are the default English messages.
+
+Test sources are named as `Class.method`. All classes are in
+`src/test/java/org/springframework/samples/petclinic/owner/`:
+`PetControllerCharacterizationTests` (CT), `PetControllerTests` (PCT) and
+`PetValidatorTests` (PVT). Nested test classes are left out of the names.
+
+## Requirements
+
+### Requirement: Opening the pet forms
+
+The system SHALL show one pet form for adding and editing, with the owner's name and the
+fields Name, Birth Date and Type (a list of pet types). The heading and button read
+"New Pet" / "Add Pet" when adding and "Pet" / "Update Pet" when editing.
+
+Sources: PCT.initCreationForm, PCT.initUpdateForm (form
+opens). Heading, button and fields: `pets/createOrUpdatePetForm.html`.
+
+#### Scenario: Open the add form
+
+- **WHEN** the user chooses "Add New Pet" on an owner's page
+- **THEN** an empty pet form opens with the heading "New Pet" and an "Add Pet" button
+
+#### Scenario: Open the edit form
+
+- **WHEN** the user chooses "Edit Pet" for one of the owner's pets
+- **THEN** the pet form opens with the heading "Pet" and an "Update Pet" button
+
+### Requirement: Adding a pet
+
+The system SHALL add the pet to the owner when an add form passes every check. It then
+returns the user to the owner's page with the message "New Pet has been Added". A pet id
+sent with the form SHALL be ignored, so the new pet always gets a new identity.
+
+Sources: CT.createSavesOwnerWithNewPetAndFlashesMessage, CT.createIgnoresSubmittedId,
+PCT.processCreationFormSuccess.
+
+#### Scenario: Add a valid pet
+
+- **WHEN** the user submits the add form with name "Betty", type "hamster" and birth date 2015-02-12
+- **THEN** the user is returned to the owner's page with the message "New Pet has been Added"
+- **AND** the owner now has a pet "Betty" of type hamster born 2015-02-12, as well as the pets they had before
+
+#### Scenario: A submitted pet id is ignored when adding
+
+- **WHEN** the add form is submitted with a valid pet and an id of 99
+- **THEN** the pet is added as a new pet and does not take the id 99
+
+### Requirement: Editing a pet
+
+The system SHALL save a valid edit onto the same pet and return the user to the owner's
+page with the message "Pet details has been edited". A pet id sent with the form SHALL be
+ignored.
+
+Sources: CT.editUpdatesExistingPetAndFlashesMessage,
+CT.editCopiesNameBirthDateAndTypeOntoOwnersPetWhenInstancesDiffer, CT.editIgnoresSubmittedId,
+PCT.processUpdateFormSuccess, PCT.processUpdateFormWithSameName.
+
+#### Scenario: Edit a pet
+
+- **WHEN** the user edits pet "petty" to name "Betty", type "hamster" and birth date 2015-02-12
+- **THEN** the user is returned to the owner's page with the message "Pet details has been edited"
+- **AND** the same pet now has name "Betty", type hamster and birth date 2015-02-12
+- **AND** the owner has the same number of pets as before
+
+#### Scenario: Keep the same name
+
+- **WHEN** the user submits the edit form for "petty" without changing the name
+- **THEN** the change is saved and the user is returned to the owner's page
+
+#### Scenario: A submitted pet id is ignored when editing
+
+- **WHEN** the edit form for the pet with id 1 is submitted with an id of 99
+- **THEN** the edit is saved to pet 1 and the pet keeps the id 1
+
+### Requirement: Rejected forms
+
+The system SHALL show the form again when a submission fails any check, mark each field in
+error with its message, and save nothing. Every failed check SHALL be reported at the same
+time, not only the first.
+
+Sources: CT.createReportsEveryValidatorErrorAtOnce,
+CT.createReportsDuplicateNameAndFutureBirthDateTogether,
+CT.editRejectedFormHasAlreadyBoundValuesOntoOwnersPet, and every rejection test in CT
+that checks nothing is saved.
+
+#### Scenario: Empty add form
+
+- **WHEN** the user submits the add form with no name, no type and no birth date
+- **THEN** the form is shown again with "is required" against Name, Type and Birth Date
+- **AND** no pet is added
+
+#### Scenario: Several fields wrong at once
+
+- **WHEN** the user adds a pet with the name of an existing pet and a birth date of tomorrow
+- **THEN** the form is shown again with "is already in use" against Name and "invalid date" against Birth Date
+
+#### Scenario: Rejected edit is not saved
+
+- **WHEN** the user submits an edit that fails a check
+- **THEN** the form is shown again and the pet is left as it was
+
+### Requirement: Pet name is required
+
+The system SHALL reject a name that is empty or only whitespace, showing "is required"
+against Name. In that case no duplicate-name error SHALL be shown for Name.
+
+Sources: CT.createBlankNameReportsOnlyRequiredNotDuplicate,
+CT.editBlankNameReportsOnlyRequiredNotDuplicate,
+PCT.processCreationFormWithBlankName,
+PCT.processUpdateFormWithBlankName,
+PVT.validateWithInvalidPetName.
+
+#### Scenario: Blank name when adding
+
+- **WHEN** the user adds a pet with an empty name and a valid type and birth date
+- **THEN** the form is shown again with only "is required" against Name
+
+#### Scenario: Whitespace name when editing
+
+- **WHEN** the user submits the edit form with a name made only of spaces
+- **THEN** the form is shown again with "is required" against Name
+
+### Requirement: Pet name length
+
+The system SHALL accept a name of up to 30 characters. A longer name SHALL be rejected
+with "Name must be no more than 30 characters" against Name, on both forms.
+
+Sources: CT.createNameOf30CharsAccepted, CT.createNameOf31CharsRejectedWithSize,
+CT.editNameOf31CharsRejectedWithSize, PVT.validateWithLongPetName.
+
+#### Scenario: 30-character name
+
+- **WHEN** the user adds a pet whose name is 30 characters long
+- **THEN** the pet is added
+
+#### Scenario: 31-character name
+
+- **WHEN** the user adds or edits a pet with a 31-character name
+- **THEN** the form is shown again with "Name must be no more than 30 characters" against Name
+
+### Requirement: Pet names are unique per owner
+
+The system SHALL reject a name matching another of the owner's pets, ignoring case, with
+"is already in use" against Name. When editing, the pet's own name SHALL NOT count as a
+match, in any case.
+
+Sources: CT.createDuplicateNameIsCaseInsensitive, CT.editDuplicateNameOfOtherPetIsCaseInsensitive,
+CT.editOwnNameInDifferentCaseIsAllowed,
+PCT.processCreationFormWithDuplicateName,
+PCT.processUpdateFormWithDuplicateName.
+
+#### Scenario: Duplicate name in a different case when adding
+
+- **WHEN** the owner has a pet "petty" and the user adds a pet named "PETTY"
+- **THEN** the form is shown again with "is already in use" against Name
+- **AND** no pet is added
+
+#### Scenario: Renaming to another pet's name
+
+- **WHEN** the owner has pets "petty" and "doggy" and the user edits "doggy" to "PETTY"
+- **THEN** the form is shown again with "is already in use" against Name
+- **AND** nothing is saved
+
+#### Scenario: Changing the case of the pet's own name
+
+- **WHEN** the user edits "petty" to "PETTY"
+- **THEN** the change is saved and the pet is now named "PETTY"
+
+### Requirement: Duplicate name found when saving
+
+The system SHALL show the form again with "is already in use" against Name when a save
+fails because the owner already has a pet of that name.
+
+Sources: CT.createUniqueViolationMessageMatchedCaseInsensitively,
+CT.editUniqueViolationMessageMatchedCaseInsensitively,
+PCT.processCreationFormWithDataIntegrityViolation,
+PCT.processUpdateFormWithDataIntegrityViolation.
+
+#### Scenario: Duplicate found when saving
+
+- **WHEN** a submission passes the form checks but the save fails because the owner already has a pet with that name
+- **THEN** the form is shown again with "is already in use" against Name
+
+### Requirement: Other save failures
+
+The system SHALL end the request with an error, instead of showing the form again, when a
+save fails for any reason other than a duplicate pet name.
+
+Sources: CT.createOtherIntegrityViolationIsRethrown, CT.editOtherIntegrityViolationIsRethrown.
+
+#### Scenario: Other save failure
+
+- **WHEN** a submission passes the form checks but the save fails for another reason
+- **THEN** the request ends with an error and the form is not shown again
+
+### Requirement: Pet type is required only when adding
+
+The system SHALL require a type when adding a pet, showing "is required" against Type if
+none is given. The edit form SHALL accept a submission without a type.
+
+Sources: CT.createReportsEveryValidatorErrorAtOnce, CT.editDoesNotRequireType,
+PCT.processCreationFormWithMissingPetType,
+PVT.validateWithInvalidPetType.
+
+#### Scenario: Missing type when adding
+
+- **WHEN** the user adds a pet with a name and birth date but no type
+- **THEN** the form is shown again with "is required" against Type
+
+#### Scenario: Missing type when editing
+
+- **WHEN** the user submits the edit form with a name and birth date but no type
+- **THEN** the change is saved and the user is returned to the owner's page
+
+### Requirement: Birth date is not in the future
+
+The system SHALL accept today as a birth date on both forms and reject a later date with
+"invalid date", the same message as an unreadable date.
+
+Sources: CT.createAcceptsBirthDateOfToday, CT.editAcceptsBirthDateOfToday,
+CT.createRejectsBirthDateOfTomorrowWithCodeOnlyAndDoesNotSave,
+PCT.processCreationFormWithInvalidBirthDate, PCT.processUpdateFormRejectsFutureBirthDate.
+
+#### Scenario: Birth date of today
+
+- **WHEN** the user adds or edits a pet with today's date as the birth date
+- **THEN** the submission is saved
+
+#### Scenario: Birth date of tomorrow
+
+- **WHEN** the user adds or edits a pet with tomorrow's date as the birth date
+- **THEN** the form is shown again with "invalid date" against Birth Date
+- **AND** nothing is saved
+
+### Requirement: Birth date is required
+
+The system SHALL require a readable birth date on both forms. A missing date shows
+"is required"; an unreadable date shows "invalid date" and "is required".
+
+Sources: CT.createMissingBirthDateIsRequired, CT.editMissingBirthDateIsRequiredAndNotSaved,
+CT.createUnparseableBirthDateReportsTypeMismatchAndRequired,
+PCT.processUpdateFormWithInvalidBirthDate, PVT.validateWithInvalidBirthDate.
+
+#### Scenario: Missing birth date
+
+- **WHEN** the user adds or edits a pet with no birth date
+- **THEN** the form is shown again with "is required" against Birth Date
+- **AND** nothing is saved
+
+#### Scenario: Birth date that cannot be read
+
+- **WHEN** the user adds a pet with the birth date "2015/02/12"
+- **THEN** the form is shown again with "invalid date" and "is required" against Birth Date
+
+### Requirement: Editing a pet the owner does not have
+
+The system SHALL end the request with an error, and save nothing, when the edit form is
+submitted for a pet id that does not belong to the owner.
+
+Sources: CT.editUnknownPetIdFailsWithNullPointerAndDoesNotSave.
+
+#### Scenario: Unknown pet id
+
+- **WHEN** the edit form is submitted for pet id 99 and the owner has no pet with that id
+- **THEN** the request ends with an error and nothing is saved
+```
+
+Reading it back, a few scenarios say a little more than their tests check:
+
+- **"Birth date of tomorrow"** says "nothing is saved" for both forms. Only the add test checks that (`CT.createRejectsBirthDateOfTomorrowWithCodeOnlyAndDoesNotSave`). For the edit form it comes from the code: a rejected form returns before the save (`PetController.java:146-148`).
+- **"Missing birth date"** has the same gap the other way round. Only the edit test checks that nothing is saved (`CT.editMissingBirthDateIsRequiredAndNotSaved`). For the add form it comes from the code (`PetController.java:114-116`).
+- **"Rejected edit is not saved"** says "the pet is left as it was". That's true of what gets saved. But the edit test that's marked SUSPECT shows the pet loaded for the request *is* changed before the form is rejected (`CT.editRejectedFormHasAlreadyBoundValuesOntoOwnersPet`).
+- **The 30-character name** is only tested on the add form. The 31-character rejection is tested on both forms.
+
+The Sources line under "Opening the pet forms" also has an awkward line break in "(form opens)". If you want, I can tighten these scenarios to match the tests exactly, or name the code lines as an extra source.

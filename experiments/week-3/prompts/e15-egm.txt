@@ -1,0 +1,12 @@
+Review the proposed OpenSpec change pc-301 with Google's Elephant-Goldfish Model (EGM), before anyone writes code for it.
+
+EGM is at /ladder/layers/w3-egm/egm: its root holds agents/, resources/, docs/ and skills/. Claude Code has not registered EGM's skills or subagents in this session. First read /ladder/layers/w3-egm/egm/docs/claude.md, then read /ladder/layers/w3-egm/egm/skills/egm-review/SKILL.md and follow it in this thread, reading any other EGM skill it names the same way. Where it names a subagent type such as egm-zoom-out, spawn a general-purpose subagent and tell it to read that persona file in /ladder/layers/w3-egm/egm/agents/ first, as the skill allows. Pass every subagent absolute paths.
+
+The skill's inputs are fixed; do not ask for them:
+- TargetFile: /work/target/egm/pc-301-design.md. It is the proposed change as one document: the proposal, the spec deltas, the design, then "## Detailed Implementation Plan" with the tasks.
+- GoldfishContext: /work/openspec/changes/pc-301/decisions.md (the decisions the change must carry), /work/openspec/specs/pets/spec.md (the current behaviour), /work/GLOSSARY.md, /work/target/egm/probe.md (a probe the harness ran on a throwaway copy of the code), and the source tree under /work/src.
+- Step: uninterrupted, the consolidated report with all review rubrics. Run all five stages without checkpoints.
+
+EGM artifact directory: /work/target/egm
+
+This is a batch run: nobody answers questions. Where the skill would ask, use the inputs above. Do not edit anything outside /work/target/egm. When the consolidated report is written, reply with its path and every finding in it, grouped by severity.

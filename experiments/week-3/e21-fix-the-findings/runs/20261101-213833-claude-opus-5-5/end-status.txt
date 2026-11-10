@@ -1,0 +1,46 @@
+ M src/main/java/org/springframework/samples/petclinic/owner/OwnerRepository.java
+ M src/main/java/org/springframework/samples/petclinic/owner/Pet.java
+ M src/main/java/org/springframework/samples/petclinic/owner/PetController.java
+ M src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
+ M src/main/resources/db/h2/data.sql
+ M src/main/resources/db/h2/schema.sql
+ M src/main/resources/db/mysql/data.sql
+ M src/main/resources/db/mysql/schema.sql
+ M src/main/resources/db/postgres/schema.sql
+ M src/main/resources/messages/messages.properties
+ M src/main/resources/messages/messages_de.properties
+ M src/main/resources/messages/messages_es.properties
+ M src/main/resources/messages/messages_fa.properties
+ M src/main/resources/messages/messages_hi.properties
+ M src/main/resources/messages/messages_ja.properties
+ M src/main/resources/messages/messages_ko.properties
+ M src/main/resources/messages/messages_pt.properties
+ M src/main/resources/messages/messages_ru.properties
+ M src/main/resources/messages/messages_tr.properties
+ M src/main/resources/templates/owners/ownerDetails.html
+ M src/main/resources/templates/pets/createOrUpdatePetForm.html
+ M src/test/java/org/springframework/samples/petclinic/PetClinicConcurrencyTests.java
+ M src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java
+ M src/test/java/org/springframework/samples/petclinic/owner/PetControllerCharacterizationTests.java
+ M src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java
+ M src/test/java/org/springframework/samples/petclinic/owner/PetValidatorTests.java
+ M src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java
+?? GLOSSARY.md
+?? openspec/changes/pc-301/decisions.md
+?? openspec/changes/pc-301/design.md
+?? openspec/changes/pc-301/proposal.md
+?? openspec/changes/pc-301/specs/owner-details/spec.md
+?? openspec/changes/pc-301/specs/pets/spec.md
+?? openspec/changes/pc-301/tasks.md
+?? openspec/specs/pets/spec.md
+?? src/main/resources/db/mysql/migrate-pc-301-microchip-number.sql
+?? src/main/resources/db/postgres/migrate-pc-301-microchip-number.sql
+?? src/test/java/org/springframework/samples/petclinic/MicrochipNumberMigrationScenario.java
+?? src/test/java/org/springframework/samples/petclinic/MySqlMicrochipNumberMigrationTests.java
+?? src/test/java/org/springframework/samples/petclinic/PetMicrochipNumberIntegrationTests.java
+?? src/test/java/org/springframework/samples/petclinic/PostgresMicrochipNumberMigrationTests.java
+?? src/test/java/org/springframework/samples/petclinic/owner/PetTests.java
+?? src/test/resources/pc-301-release-1/mysql/data.sql
+?? src/test/resources/pc-301-release-1/mysql/schema.sql
+?? src/test/resources/pc-301-release-1/postgres/data.sql
+?? src/test/resources/pc-301-release-1/postgres/schema.sql

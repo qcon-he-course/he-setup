@@ -1,0 +1,2768 @@
+diff --git a/GLOSSARY.md b/GLOSSARY.md
+new file mode 100644
+index 0000000..9153ba5
+--- /dev/null
++++ b/GLOSSARY.md
+@@ -0,0 +1,9 @@
++# Pet clinic
++
++The clinic's reception keeps a record of owners, their pets and the pets' visits.
++
++## Language
++
++**Microchip number**:
++The 15-digit ISO 11784 number read from the microchip implanted in a pet.
++_Avoid_: Chip number, chip ID, transponder
+diff --git a/openspec/changes/pc-301/decisions.md b/openspec/changes/pc-301/decisions.md
+new file mode 100644
+index 0000000..b22ee60
+--- /dev/null
++++ b/openspec/changes/pc-301/decisions.md
+@@ -0,0 +1,52 @@
++# Decisions: pc-301
++
++Ticket: PC-301 Record a pet's microchip number
++
++## Decided
++
++- **D1** The term is **microchip number**. "Chip number", "chip ID" and "transponder" are not used. Asked as Q1, answered 2026-10-31.
++- **D2** The microchip number is optional on both the add form and the edit form. Asked as Q2, answered 2026-10-31. Rejected: required on both forms.
++- **D3** A microchip number must be exactly 15 digits: ISO 11784 only. Asked as Q3, answered 2026-10-31. Rejected: also accepting 9- or 10-character non-ISO chips (AVID, FDX-A).
++- **D4** A microchip number is unique across all pets of all owners, not only within one owner. Asked as Q4, answered 2026-10-31. Rejected: unique per owner.
++- **D5** PC-301 only records the microchip number. Looking up a pet by its microchip number is a separate ticket. Asked as Q5, answered 2026-10-31.
++- **D6** The owner's page shows each pet's microchip number with the pet's other details. Asked as Q6, answered 2026-10-31.
++- **D7** The edit form accepts a new microchip number for a pet that already has one, under the same rules as adding. Asked as Q7, answered 2026-10-31.
++- **D8** An empty microchip number on the edit form removes the stored number. The edit form must show the stored number, so clearing it is deliberate. Asked as Q8, answered 2026-10-31. Rejected: an empty field keeps the old number.
++- **D9** The entered value is trimmed and its spaces removed, then it must be exactly 15 digits. Only the digits are stored. Nothing else is removed (no dashes, no dots). Asked as Q9, answered 2026-10-31.
++- **D10** A microchip number that is not 15 digits after D9 gets the error "must be 15 digits". A duplicate gets "is already in use". Both errors are on the microchip number field. Asked as Q10, answered 2026-10-31.
++- **D11** The duplicate error is only "is already in use". The form must not show another owner's pet or details. Asked as Q11, answered 2026-10-31. Rejected: naming the pet or owner that has the number.
++- **D12** H2, MySQL and Postgres each get a named unique constraint on the microchip number. A duplicate caught by the database is reported as "is already in use" on the microchip number field. Where that code goes is a design decision, not part of this requirement. Asked as Q12, answered 2026-10-31.
++- **D13** Fixing the unnamed MySQL pet-name constraint (F4) is not part of PC-301. It is a separate bug. Asked as Q13, answered 2026-10-31.
++- **D14** A pet never conflicts with its own microchip number, compared after spaces are removed. Saving a pet again with the number it already has is accepted. Asked as Q14, answered 2026-10-31.
++- **D15** Only the 15-digit check applies. The country or manufacturer code in the first three digits is not checked. Asked as Q15, answered 2026-10-31. Rejected: checking against ISO 3166 numeric and manufacturer codes.
++- **D16** On the owner's page, a pet without a microchip number shows the "Microchip number" label with an empty value. Asked as Q16, answered 2026-10-31. Rejected: hiding the label; showing a word such as "none".
++- **D17** A malformed microchip number gets the format error only. A well-formed duplicate gets "is already in use" only. Either one is reported together with the form's other errors. Asked as Q17, answered 2026-10-31.
++- **D18** Where the uniqueness check lives in the code is a design decision for the change, not part of this requirement (see F6). Stated by the user on 2026-10-31.
++- **D19** A duplicate caught by the database becomes the error on the microchip number field through a `PetValidator` method that rejects the field. The controller's `catch` calls that method. No new `rejectValue` call is added to a controller, and the freeze store stays as it is (F6, F11). Asked as G1 at the gate of 1 November, answered 2026-11-01. Rejected: one `rejectValue` call per `catch` that chooses the field (it reshapes the pinned name mapping); a waiver for two more frozen violations (it weakens the sensor); `@ControllerAdvice` (it avoids the rule instead of meeting it).
++- **D20** *Replaced by D23 (G5, gate of 1 November, round 3); kept for the record.* PC-301 has no migration plan. Existing MySQL and Postgres databases are out of scope: the change covers the schema scripts the app starts from. No decision asked for a migration. Known gap recorded with this answer: the duplicate has no cross-database test. The MySQL and Postgres integration tests run only where Docker is available, and the change adds no microchip number test to them (Codex R3, left as it is). Asked as G2 at the gate of 1 November, answered 2026-11-01.
++- **D21** One test on H2 adds a pet with a microchip number, edits it to another number, clears it, and reads the stored value after each step. The same test submits a rejected edit and reads that the stored value is unchanged. Asked as G3 at the gate of 1 November, answered 2026-11-01.
++- **D22** Until the lookup ticket (D5), a microchip number typed onto the wrong pet blocks the right pet, and reception cannot see which pet holds it. This is accepted. It follows from D5 (no lookup) and D11 (the error names no other pet), and the lookup ticket is where it gets fixed. Asked as G4 at the gate of 1 November, answered 2026-11-01.
++- **D23** *Amended by D25 (G7, gate of 1 November, round 4): on MySQL the premise "the old code keeps working against the new table because it never names the column" is false while the old `data.sql` inserts by position, and holds only from release 1 on; the deployment becomes release 1, then the script, then release 2; rollback redeploys release 1. The rest stands; text kept as answered.* Replaces D20: G2 was wrong and is reversed. A real clinic's database already holds data, so the change migrates existing MySQL and Postgres databases. It ships one migration script per database; H2 is in memory and needs none. The script adds the nullable `microchip_number` column, then the unique constraint `unique_pet_microchip_number` (a unique index on Postgres, as for pet names). It is run before the new code is deployed; the old code keeps working against the new table because it never names the column. The `schema.sql` files still create the column for new databases. Rollback: redeploy the old code and leave the column; dropping it is a separate, later step. The change documents these steps in order. Why G2 was wrong: the reviews found that the plan's steps were in the wrong order, and the recommendation at the gate called the plan added scope because no decision asked for it. A migration is not a product decision; adding a column to a table that holds data requires one. The answer should have been "fix the order". Known gaps recorded with this answer: PetClinic has no migration tool, which a real team would use to apply the scripts; and the tests of the migration scripts on MySQL and Postgres run only with Docker, and are skipped without it. Asked as G5 (review R1) at the gate of 1 November, round 3, answered 2026-11-01.
++- **D24** The microchip number does not appear on the visit form in this change. D6 covers the owner's page only. The visit form goes on the list for the lookup ticket (D5). Asked as G6 (review R5) at the gate of 1 November, round 3, answered 2026-11-01.
++- **D25** Amends D23. On MySQL the old code cannot start against the migrated table, because the old `db/mysql/data.sql` inserts pets by position and runs at every start (F12). So the move from the old code to the new takes two releases. Release 1 ships only the column lists for the pet inserts in `data.sql` (H2 and MySQL); they work on the old table and on the migrated one. Then the migration script runs. Then release 2 ships the microchip number. Rollback from release 2 redeploys release 1, which works on the migrated table. What this changes in D23: its premise "the old code keeps working against the new table because it never names the column" is false on MySQL while the old `data.sql` inserts by position, and holds from release 1 on; "run before the new code is deployed" now means after release 1 and before release 2; "redeploy the old code" now means redeploy release 1. The rest of D23 stands. The change stays one OpenSpec change; the two releases are ordered steps in the design's deployment plan and in the tasks. Why D23's premise was wrong: the round-3 gate file stated it, and nobody checked it against the old `data.sql`. The positional seed inserts are the same root cause as the `data.sql` BLOCK of the first reviews. Asked as G7 (review R1) at the gate of 1 November, round 4, answered 2026-11-01. Rejected: an `INVISIBLE` MySQL column; accepting that rollback on MySQL means editing the old `data.sql` too.
++- **D26** The migration tests add no dependency. Adding a dependency stays with a person, and this one is not needed: `PostgresIntegrationTests` starts Postgres through Spring Boot's Docker Compose support, already in the pom, and the MySQL tests use the `testcontainers-mysql` already there. The migration tests follow those existing patterns. Asked as G8 at the gate of 1 November, round 4, answered 2026-11-01. Rejected: adding `org.testcontainers:testcontainers-postgresql`.
++
++## Facts the decisions rest on
++
++- **F1** Nothing in the code or specs mentions a chip today. Source: `grep -rni chip src openspec`, no matches.
++- **F2** A pet has a name, birth date, type and visits. Source: `src/main/java/org/springframework/samples/petclinic/owner/Pet.java`; `pets` table in `src/main/resources/db/h2/schema.sql:46-52`, `db/mysql/schema.sql:38-48`, `db/postgres/schema.sql:36-42`.
++- **F3** Pet names are unique per owner, enforced by the controller (`PetController.java:110-112`, `141-144`) and by the constraint `unique_owner_pet_name` (`db/h2/schema.sql:55`, `db/postgres/schema.sql:45`), which the controller recognises by name (`PetController.java:193-196`).
++- **F4** On MySQL the owner-and-name unique constraint has no name (`db/mysql/schema.sql:47`), so the name check in F3 probably doesn't match there. INFERRED, not tested.
++- **F5** No pet search exists. `OwnerRepository` only finds owners.
++- **F6** Controllers must leave field validation to the form's Validator (`ArchitectureTests.java:36-41`). `PetValidator` has no repository access.
++- **F7** The owner's page shows each pet's name, birth date and type. Source: `src/main/resources/templates/owners/ownerDetails.html:52-56`.
++- **F8** None of the 13 seeded pets has a microchip number. Source: `src/main/resources/db/h2/data.sql`.
++- **F9** The messages "is required" and "is already in use" already exist (`src/main/resources/messages/messages.properties:2,4`). `I18nPropertiesSyncTest` exists, so a new message probably has to be added to every locale's message file (INFERRED).
++- **F10** A duplicate pet name caught by the database is shown on the form (`PetController.java:121-128`, `152-159`).
++- **F11** One added `result.rejectValue("microchipNumber", "duplicate", …)` in `processCreationForm` fails `ArchitectureTests` ("was violated (1 times)"). The freeze store ignores line numbers but counts calls per method. Source: the harness probe reported in the reviews of 31 October (Opus R1, Sonnet R1); not re-run for this log.
++- **F12** The H2 and MySQL seed scripts insert pets by position, with five values (`db/h2/data.sql:36-48`, `db/mysql/data.sql:36-48`, e.g. `INSERT IGNORE INTO pets VALUES (1, 'Leo', '2000-09-07', 1, 1);`). The Postgres one names its columns (`db/postgres/data.sql:36-48`). MySQL and Postgres run `schema.sql` and `data.sql` at every start (`spring.sql.init.mode=always`, `application-mysql.properties:7`, `application-postgres.properties:7`). Source: review of round 3 (R1), checked again for this log. That MySQL then fails to start on a six-column table is INFERRED, not run.
++- **F13** `PostgresIntegrationTests` starts Postgres through Spring Boot's Docker Compose support (`PostgresIntegrationTests.java:51-52`) and skips itself without Docker (`PostgresIntegrationTests.java:68`). `MySqlIntegrationTests` uses a Testcontainers container with `@ServiceConnection` and `@Testcontainers(disabledWithoutDocker = true)` (`MySqlIntegrationTests.java:43-49`). `pom.xml:162-186` has `spring-boot-testcontainers`, `spring-boot-docker-compose`, `testcontainers-junit-jupiter` and `testcontainers-mysql`, and no `testcontainers-postgresql`.
++
++## Open
++
++- None on PC-301's frontier. Two follow-ups are outside this change: looking up a pet by its microchip number (D5), and the unnamed MySQL pet-name constraint (D13, F4). Both need their own tickets. The lookup ticket also fixes the wrong-pet case accepted in D22, and has the microchip number on the visit form on its list (D24).
+diff --git a/openspec/changes/pc-301/design.md b/openspec/changes/pc-301/design.md
+new file mode 100644
+index 0000000..fc4ef39
+--- /dev/null
++++ b/openspec/changes/pc-301/design.md
+@@ -0,0 +1,142 @@
++# Design
++
++## Context
++
++See `proposal.md` for the motivation, and `specs/pets/spec.md` and `specs/owner-details/spec.md` for the requirements. The facts below shape how the change is built. Each is labelled VERIFIED (code opened) or INFERRED (not checked).
++
++- **Validation placement.** `ArchitectureTests.java:36-43` forbids controllers from calling `Errors.rejectValue`, because field validation belongs in `PetValidator`. The rule is wrapped in `freeze(...)`, so the calls that already exist are recorded in `src/test/resources/archunit_store/1cbfc1d1-…` and tolerated. That includes the four calls in `PetController`'s two POST handlers. VERIFIED. The store counts calls per method, so one more `rejectValue` call in a POST handler fails the rule (F11, from the reviewers' probe; not re-run here).
++- **Validator wiring.** `PetValidator` is created with `new PetValidator()` in `PetController.initPetBinder` (`PetController.java:95`). It has no repository (F6). VERIFIED.
++- **Pet ids.** The `id` field cannot be bound from the form (`PetController.java:96`). On edit, the `pet` model attribute is the owner's pet loaded by the path's `petId` (`PetController.java:74-86`). So `pet.getId()` can be trusted when excluding a pet's own number. VERIFIED.
++- **Edit copies fields.** `updatePetDetails` copies name, birth date and type onto the owner's pet (`PetController.java:177-191`). A new field is not copied unless it is added there. VERIFIED.
++- **Database violations.** `isDuplicatePetNameViolation` matches the constraint name in the exception message, ignoring case (`PetController.java:193-196`). VERIFIED.
++- **Schema setup.** The schema is created by `spring.sql.init` from `db/${database}/schema.sql`, and Hibernate does not manage the DDL (`application.properties:3,10`). The MySQL and Postgres scripts use `CREATE TABLE IF NOT EXISTS` (`db/mysql/schema.sql:38`, `db/postgres/schema.sql:36`). VERIFIED.
++- **Open session.** `spring.jpa.open-in-view=false` (`application.properties:11`). VERIFIED.
++- **Message files.** `I18nPropertiesSyncTest.checkI18nPropertyFilesAreInSync` requires every key of `messages.properties` in every `messages_*.properties` except `messages_en` (`I18nPropertiesSyncTest.java:112-127`). VERIFIED.
++
++## Goals / Non-Goals
++
++**Goals:**
++
++- Put the format and uniqueness rules in `PetValidator`, so the add and edit forms share them and the architecture rule's intent holds.
++- Make the database the final guard against duplicates, under one constraint name on all three databases.
++
++**Non-Goals:**
++
++- No index or query for finding a pet by its microchip number beyond what the uniqueness check needs (D5).
++- No change to the owner-and-pet-name constraint on MySQL (D13).
++- No schema migration tool. The project has none, so the migration scripts of Decision 8 are applied by hand (known gap, D23).
++- No microchip number on the visit form (D24). It goes on the list for the lookup ticket (D5).
++
++## Decisions
++
++### 1. Storage: a nullable `microchip_number` column, with no number stored as NULL
++
++`pets.microchip_number` is `VARCHAR(15)` on H2 and MySQL and `TEXT` on Postgres, matching each script's existing style. It is nullable. "No microchip number" is stored as `NULL`, never as `''`. A unique constraint allows any number of NULLs on H2, MySQL and Postgres, but only one `''` (INFERRED from each database's documented behaviour). An empty string would therefore make the second pet without a number a duplicate (see the scenario "Two pets without a microchip number").
++
++*Alternative rejected:* `CHAR(15)`. It pads values, and the format check already fixes the length.
++
++### 2. Normalisation in `Pet.setMicrochipNumber`
++
++The setter trims the value and removes every `' '`. If the result is empty, it stores `null`. Other characters, including dashes, dots and inner tabs, are left in place for the validator to reject (D9). Putting this in the entity means that whatever path sets the value, the validator, the uniqueness query and the stored column all see the same normalised string.
++
++*Alternative rejected:* a `PropertyEditor` registered in `PetController.initPetBinder`. It works only for web binding, and validator tests would have to repeat the normalisation.
++
++### 3. Format check: `[0-9]{15}` in `PetValidator`
++
++The check uses `[0-9]` rather than `\d`, so that the rule cannot quietly widen to other digit characters if the pattern ever gets Unicode flags. The error code is `microchipNumber.invalid`, following the existing `telephone.invalid` (`messages.properties:34`), with the message "must be 15 digits". The prefix (country or manufacturer code) is not checked (D15).
++
++### 4. Uniqueness check in `PetValidator`, through a new `PetRepository`
++
++The new interface is `PetRepository extends Repository<Pet, Integer>`. It has only what the check needs:
++
++- `existsByMicrochipNumber(String)`, for a new pet, and
++- `existsByMicrochipNumberAndIdNot(String, Integer)`, for an existing pet (D14).
++
++Two methods are needed because `id <> NULL` is never true in SQL. A single `AndIdNot` query called with a null id would never find a duplicate on the add form. `PetValidator` gets a constructor that takes `PetRepository`, and `PetController` injects it and calls `new PetValidator(pets)` in `initPetBinder`. The uniqueness query runs only when the format check passes (D17), so the field gets at most one error. The error code is the existing `duplicate` ("is already in use", `messages.properties:4`), and the error carries no argument that names the other pet (D11).
++
++On edit, the bound `pet` is a detached entity (`open-in-view=false`), so the `exists` query cannot flush the half-edited pet first. INFERRED, and covered by the G3 test (D21, task 3.5), which runs on H2. Task 3 otherwise runs on mocked repositories and cannot show this.
++
++*Alternatives rejected:*
++
++- A check in the controller, as the pet-name check does today. It adds a `rejectValue` call that the frozen rule exists to stop.
++- A query on `OwnerRepository`. That repository finds owners. A pet-level `exists` query does not belong there, and loading every owner to scan their pets would not scale.
++
++### 5. Database duplicates are rejected by a `PetValidator` method that the controller's `catch` calls
++
++The constraint is named `unique_pet_microchip_number` on all three databases:
++
++- H2: `ALTER TABLE pets ADD CONSTRAINT … UNIQUE`.
++- MySQL: a named `CONSTRAINT … UNIQUE` inside `CREATE TABLE`.
++- Postgres: `CREATE UNIQUE INDEX IF NOT EXISTS`, as `unique_owner_pet_name` is (`db/postgres/schema.sql:45`).
++
++Neither constraint name is a substring of the other. Both POST handlers' `catch (DataIntegrityViolationException)` blocks check for the microchip constraint first, then the name constraint, then rethrow (spec: "Duplicate microchip numbers caught by the database", and the MODIFIED "Duplicate names caught by the database").
++
++The save fails after validation has run, so the validator's normal checks cannot see this case. Per D19, `PetValidator` gets a public method, for example `rejectDuplicateMicrochipNumber(Errors)`, that calls `rejectValue("microchipNumber", "duplicate")` with no argument naming another pet (D11). When the exception names `unique_pet_microchip_number`, ignoring case, the controller's `catch` calls this method and shows the form again. `PetController` builds one `PetValidator` from the injected `PetRepository`. It uses that validator both in `initPetBinder` and in the two `catch` blocks.
++
++No new `rejectValue` call is added to `PetController`. The four frozen calls of the name mapping (F10) stay as they are, and so does the freeze store. The implementer must not regenerate or edit the freeze store. If `ArchitectureTests` fails anyway, they stop and raise it with the ticket owner (task 4.3).
++
++*Alternatives rejected:*
++
++- One `rejectValue` call per `catch` that chooses the field from the error, `name` or `microchipNumber`. It reshapes the name mapping that the characterisation tests pin (D19).
++- A waiver for two more frozen violations. It weakens the sensor (D19).
++- `@ControllerAdvice`. It avoids the rule instead of meeting it (D19).
++- New `rejectValue` calls in the controller, next to the name mapping. The probe shows that the freeze store rejects them (F11).
++- Run the validator again after the failed save, so that the `exists` query finds the winning row. It depends on the other transaction's commit being visible and on the failed persistence context not flushing again. That is too fragile for a race-condition path.
++
++### 6. The edit copy includes the microchip number
++
++`updatePetDetails` also copies `microchipNumber`, including `null`, so that clearing the field removes the number (D8).
++
++### 7. Views and messages
++
++- Two new keys:
++  - `microchipNumber=Microchip number` (glossary term, D1)
++  - `microchipNumber.invalid=must be 15 digits`
++
++  Both go in `messages.properties` and every locale file except `messages_en`.
++- `pets/createOrUpdatePetForm.html` gets a text input for `microchipNumber` through the existing `inputField` fragment, after the birth date. `th:field` fills it with the stored value on edit (spec: "The edit form shows the stored microchip number").
++- `owners/ownerDetails.html` gets `<dt th:text="#{microchipNumber}">` and `<dd th:text="${pet.microchipNumber}">` after the type (`ownerDetails.html:55-56`). A `null` renders as an empty `dd` (INFERRED Thymeleaf behaviour), which is what D16 asks for.
++
++### 8. Existing MySQL and Postgres databases are migrated by one script each
++
++Per D23, which replaces D20, as amended by D25. On an existing database, `CREATE TABLE IF NOT EXISTS pets` is skipped (`db/mysql/schema.sql:38`, `db/postgres/schema.sql:36`, VERIFIED), so the new column would never be created there. `spring.sql.init.mode=always` (`application-mysql.properties:7`, `application-postgres.properties:7`, VERIFIED) runs `schema.sql` on every start, so release 2 would meet a table without the column (review R1; the exact failure is INFERRED, not run).
++
++The scripts:
++
++- `db/mysql/migrate-pc-301-microchip-number.sql`: `ALTER TABLE pets ADD COLUMN microchip_number VARCHAR(15) NULL`, then `ALTER TABLE pets ADD CONSTRAINT unique_pet_microchip_number UNIQUE (microchip_number)`.
++- `db/postgres/migrate-pc-301-microchip-number.sql`: `ALTER TABLE pets ADD COLUMN IF NOT EXISTS microchip_number TEXT`, then `CREATE UNIQUE INDEX IF NOT EXISTS unique_pet_microchip_number ON pets (microchip_number)`, as `unique_owner_pet_name` is (`db/postgres/schema.sql:45`).
++- None for H2: it is in memory and rebuilt on every start.
++
++Column types and the constraint name match Decisions 1 and 5. The scripts sit under `src/main/resources/db/<database>/` but are not run at start: `spring.sql.init` reads only `schema.sql` and `data.sql` there (`application.properties:3-4`, VERIFIED). The `schema.sql` files still create the column and the constraint for new databases (task 1.1). Each script starts with a comment that says to run it after release 1 is deployed and before release 2 is (D25).
++
++The change ships in two releases (D25, which amends D23). D23 said the old code keeps working against the new table because it never names the column. On MySQL that is false: the old `db/mysql/data.sql` inserts pets by position with five values (`db/mysql/data.sql:36-48`, VERIFIED) and runs at every start (`application-mysql.properties:7`, VERIFIED), so the old code cannot start against a six-column table (review R1; the exact MySQL error is INFERRED, not run). It holds from release 1 on, because release 1 names the columns.
++
++- **Release 1** ships only the column lists for the pet inserts in `db/h2/data.sql` and `db/mysql/data.sql` (task 0.1). Nothing else changes. With a column list, the inserts work on the old table and on the migrated one, where the nullable `microchip_number` is left `NULL` (INFERRED, not run). The Postgres `data.sql` already names its columns (`db/postgres/data.sql:36-48`, VERIFIED), so release 1 changes nothing for Postgres.
++- **Release 2** ships the microchip number: everything else in this change, including the migration scripts (tasks 1.1 to 5.1).
++
++Deployment, in order:
++
++1. Deploy release 1, and make sure no instance of the code before it is still running or can be restarted.
++2. Run the script for the database against the existing database, while release 1 is still running. Release 1 keeps working against the new table, because its seed inserts name their columns and the rest of it never names the new column (D25).
++3. Deploy release 2. Its `schema.sql` skips `CREATE TABLE`, and on Postgres the `CREATE UNIQUE INDEX IF NOT EXISTS unique_pet_microchip_number` finds the index the script made (INFERRED; task 1.5 checks it).
++
++Rollback from release 2, in order:
++
++1. Redeploy release 1. It works on the migrated table (D25). Do not redeploy the code before release 1: on MySQL it cannot start against the migrated table.
++2. Leave the column and the constraint in place. Dropping them is a separate, later step, not part of this change.
++
++The change stays one OpenSpec change; the two releases are ordered steps here and in `tasks.md` (D25).
++
++*Alternative rejected:* a migration tool such as Flyway or Liquibase. A real team would use one, but PetClinic has none (known gap, D23).
++
++## Risks / Trade-offs
++
++- [Existing MySQL or Postgres databases keep their old `pets` table, because `CREATE TABLE IF NOT EXISTS` skips it] → The migration scripts of Decision 8 add the column and the constraint after release 1 and before release 2 is deployed (D23, D25). H2 is in memory and rebuilt on every start.
++- [Release 2 is deployed before the migration script has run] → The steps in Decision 8 put the script before release 2. Nothing in the app enforces the order, because PetClinic has no migration tool (known gap, D23).
++- [The H2 and MySQL seed inserts give values by position (`db/h2/data.sql:36-48`, `db/mysql/data.sql:36-48`), so they would not match a sixth column, and on MySQL the code before release 1 cannot start against the migrated table (F12)] → Release 1 gives them a column list before the script runs (task 0.1, D25). Rollback goes to release 1, never to the code before it. No seeded pet gets a number (F8).
++- [Each database words its duplicate-key message differently, and H2 may put the name in upper case inside a generated index name] → The match ignores case and looks for the constraint name as a substring. Task 1.4 checks the real message on H2: it saves two pets with the same number through `OwnerRepository.saveAndFlush`, so the validator does not run, and asserts that the `DataIntegrityViolationException` names `unique_pet_microchip_number`, ignoring case. The race test (task 4.2) does not check the real message. If one request commits before the other's `exists` query runs, the validator rejects the loser and the `catch` never runs, and the page looks the same either way. The `catch` itself is covered with mocked messages (task 4.1).
++- **Known gap** (recorded with D20; D23 does not change it): the duplicate is not tested through the forms on MySQL or Postgres. Their integration tests run only with Docker (`MySqlIntegrationTests.java:43`, `PostgresIntegrationTests.java:67-68`), and they do not exercise the microchip constraint. This is left as it is.
++- **Known gaps** (D23): PetClinic has no migration tool, so the scripts are applied by hand and nothing records whether a database has been migrated. The migration tests (task 1.5) run only with Docker; without it they are skipped, and must be reported as not run rather than as passed. They add no dependency: they follow the existing `MySqlIntegrationTests` and `PostgresIntegrationTests` (D26, F13).
++- [The validator now issues one query per submission that has a microchip number] → It is an indexed `exists` query on the unique constraint, so the cost is negligible.
++- [Translations into nine languages may be poor] → The sync test checks only that the keys are present. Translations should be reviewed by a speaker before release, as for any new label.
++- [A microchip number typed onto the wrong pet blocks the right pet, and reception cannot see which pet holds it] → Accepted until the lookup ticket (D22, following from D5 and D11).
+diff --git a/openspec/changes/pc-301/proposal.md b/openspec/changes/pc-301/proposal.md
+new file mode 100644
+index 0000000..5da1c20
+--- /dev/null
++++ b/openspec/changes/pc-301/proposal.md
+@@ -0,0 +1,46 @@
++# Proposal
++
++## Why
++
++Reception has no place to record the microchip number implanted in a pet (F1 in `decisions.md`). PC-301 adds that one field to the pet record so it can be entered, corrected and seen. Looking a pet up by its microchip number is a separate ticket (D5).
++
++## What Changes
++
++- A pet gets an optional **microchip number** on both the add form and the edit form (D2, D7).
++- Before validation, the entered value is trimmed and its spaces are removed. After that it must be exactly 15 digits, or the form shows the error "must be 15 digits". Only the digits are stored. Dashes, dots and other characters are not removed. The country and manufacturer code is not checked (D3, D9, D10, D15).
++- A microchip number is unique across all pets of all owners. A duplicate gets "is already in use" and nothing more: no other pet or owner is named (D4, D10, D11). A pet never conflicts with its own number (D14).
++- A malformed number gets the format error only, and a well-formed duplicate gets the duplicate error only. Either error is reported together with the form's other errors (D17).
++- The edit form shows the stored microchip number. An empty field on the edit form removes the stored number (D8).
++- The owner's page shows a "Microchip number" label and the pet's microchip number with each pet's other details. A pet without a number shows the label with an empty value (D6, D16).
++- H2, MySQL and Postgres each get a named unique constraint on the microchip number. A duplicate caught by the database is reported as "is already in use" on the microchip number field (D12), through a `PetValidator` method that the controller's `catch` calls (D19).
++- No seeded pet gets a microchip number (F8).
++- Existing MySQL and Postgres databases are migrated by one script per database. The script adds the nullable column, then the unique constraint. The change documents the deployment and rollback steps in order (D23).
++- The change ships in two releases (D25, which amends D23). On MySQL the code before this change cannot start against the migrated table, because its `data.sql` inserts pets by position and runs at every start (F12). Release 1 ships only the column lists for the pet inserts in `data.sql` (H2 and MySQL). Then the migration script runs. Then release 2 ships the microchip number. Rollback from release 2 redeploys release 1, which works on the migrated table.
++
++Not in this change: looking up a pet by its microchip number (D5), the microchip number on the visit form (D24), and the unnamed MySQL owner-and-pet-name constraint (D13, F4). The lookup ticket takes the visit form; the MySQL constraint needs its own ticket.
++
++Known gaps: PetClinic has no migration tool, so the scripts are applied by hand; and the tests of the migration scripts run only where Docker is available (D23).
++
++Accepted limitation: until the lookup ticket, a microchip number typed onto the wrong pet blocks the right pet, and reception cannot see which pet holds it (D22).
++
++## Capabilities
++
++### New Capabilities
++
++- `owner-details`: what the owner's page shows about the owner's pets. This change introduces it with the microchip number display (D6, D16). Existing display behaviour (name, birth date, type, F7) is not specified yet.
++
++### Modified Capabilities
++
++- `pets`: adds the microchip number rules for the add and edit forms (optional, format, uniqueness, own number, clearing, error reporting, duplicates caught by the database), plus the edit form showing the stored number. Two baseline requirements are modified:
++  - "Duplicate names caught by the database": its scenario "Another integrity violation" now covers only violations that name neither the owner-and-pet-name constraint nor the microchip number constraint, because a microchip number violation shows the form again (D12).
++  - "Validation errors are reported together": it now includes an error on the microchip number, with two new scenarios (D17).
++
++  The other baseline requirements are unchanged. The baseline's Purpose excludes the GET forms. The requirement that the edit form shows the stored number is a GET-form behaviour, so the Purpose needs a one-line update when this change is archived (see `tasks.md`, Workflow follow-up).
++
++## Impact
++
++- **Data**: a new nullable `microchip_number` column and a named unique constraint on the `pets` table in `db/h2/schema.sql`, `db/mysql/schema.sql` and `db/postgres/schema.sql`. The H2 and MySQL `data.sql` pet inserts get a column list in release 1, because they insert by position today (`db/h2/data.sql:36-48`, `db/mysql/data.sql:36-48`) and would not match a sixth column (D25). No seeded pet gets a number (F8). The Postgres `data.sql` already names its columns (`db/postgres/data.sql:36-48`) and is unchanged. Two new migration scripts, one for MySQL and one for Postgres, bring an existing `pets` table to the new schema (D23). H2 needs none: it is in memory.
++- **Code**: `Pet` (new field), `PetValidator` (format and uniqueness checks, plus a lookup it does not have today, F6, and a method that rejects the field for a duplicate caught by the database, D19), `PetController` (passes the lookup to the validator, copies the field on edit, calls the validator's method when the new constraint is violated), and a new repository query for pets.
++- **Views**: `pets/createOrUpdatePetForm.html` and `owners/ownerDetails.html`.
++- **Messages**: a new message key for "must be 15 digits" and one for the "Microchip number" label, in `messages.properties` and every locale file that `I18nPropertiesSyncTest` checks. "is already in use" already exists (`messages.properties:4`).
++- **Tests**: the `@WebMvcTest` suites for `PetController` need the new repository as a mock. `PetValidatorTests` builds the validator with no arguments (`PetValidatorTests.java:59`), so it has to change too. One new test on H2 adds, edits and clears a microchip number through the forms (D21). Another saves two pets with the same microchip number on H2, past the validator, and checks that the error names the constraint. A migration test per database runs each script against a `pets` table in the old schema; it needs Docker and is skipped without it (D23). The migration tests follow the existing MySQL and Postgres integration tests and add no dependency (D26).
+diff --git a/openspec/changes/pc-301/specs/owner-details/spec.md b/openspec/changes/pc-301/specs/owner-details/spec.md
+new file mode 100644
+index 0000000..8b98096
+--- /dev/null
++++ b/openspec/changes/pc-301/specs/owner-details/spec.md
+@@ -0,0 +1,22 @@
++# Spec Delta
++
++## Purpose
++
++What the owner's page at `/owners/{ownerId}` shows about each of the owner's pets. It covers the microchip number so far. The pet's name, birth date and type are shown too, but those are not specified here yet.
++
++## ADDED Requirements
++
++### Requirement: The owner's page shows each pet's microchip number
++
++The system SHALL show, for each pet on the owner's page, the label "Microchip number" and the pet's microchip number, with the pet's other details. A pet without a microchip number SHALL show the label with an empty value, and no placeholder word.
++
++#### Scenario: A pet with a microchip number
++
++- **WHEN** the owner's page is opened for an owner whose pet "petty" has the microchip number "985141000123456"
++- **THEN** the details of "petty" show the label "Microchip number" with the value "985141000123456"
++
++#### Scenario: A pet without a microchip number
++
++- **WHEN** the owner's page is opened for an owner whose pet "petty" has no microchip number
++- **THEN** the details of "petty" show the label "Microchip number" with an empty value
++- **AND** the value is not a word such as "none"
+diff --git a/openspec/changes/pc-301/specs/pets/spec.md b/openspec/changes/pc-301/specs/pets/spec.md
+new file mode 100644
+index 0000000..a024663
+--- /dev/null
++++ b/openspec/changes/pc-301/specs/pets/spec.md
+@@ -0,0 +1,221 @@
++# Spec Delta
++
++## ADDED Requirements
++
++### Requirement: Microchip number is optional
++
++The system SHALL accept a pet without a microchip number on both the add form and the edit form. An empty or blank microchip number SHALL be stored as no microchip number.
++
++#### Scenario: A pet is added without a microchip number
++
++- **WHEN** the add form is submitted with an empty microchip number and a valid name, type and birth date
++- **THEN** the pet is saved with no microchip number
++- **AND** the browser is redirected to the owner's page with the message "New Pet has been Added"
++
++#### Scenario: A blank microchip number counts as none
++
++- **WHEN** the add form is submitted with the microchip number "   " and otherwise valid values
++- **THEN** the pet is saved with no microchip number
++
++#### Scenario: Two pets without a microchip number
++
++- **WHEN** a pet with no microchip number exists and another pet is added without a microchip number
++- **THEN** the second pet is saved
++
++### Requirement: Microchip number is stored as its digits
++
++Before checking a microchip number, the system SHALL trim the entered value and remove every space from it. The system SHALL store only the resulting digits, and SHALL NOT remove any other character.
++
++#### Scenario: Spaces are removed
++
++- **WHEN** the add form is submitted with the microchip number " 985 141 000 123 456 " and otherwise valid values
++- **THEN** the pet is saved with the microchip number "985141000123456"
++
++#### Scenario: Dashes are not removed
++
++- **WHEN** the add form is submitted with the microchip number "985-141-000-123-456"
++- **THEN** the form is shown again with "must be 15 digits" on the microchip number
++- **AND** nothing is saved
++
++### Requirement: Microchip number is exactly 15 digits
++
++The system MUST reject, on either form, a microchip number that is not exactly 15 digits after its spaces are removed, with the error "must be 15 digits" on the microchip number. The system SHALL NOT check the country or manufacturer code in the first three digits.
++
++#### Scenario: Fifteen digits are accepted
++
++- **WHEN** either form is submitted with the microchip number "985141000123456" and otherwise valid values
++- **THEN** the pet is saved with that microchip number
++
++#### Scenario: Any first three digits are accepted
++
++- **WHEN** either form is submitted with the microchip number "000000000000001" and otherwise valid values
++- **THEN** the pet is saved with that microchip number
++
++#### Scenario: Fourteen digits are rejected
++
++- **WHEN** either form is submitted with the microchip number "98514100012345"
++- **THEN** the form is shown again with "must be 15 digits" on the microchip number
++- **AND** nothing is saved
++
++#### Scenario: Sixteen digits are rejected
++
++- **WHEN** either form is submitted with the microchip number "9851410001234567"
++- **THEN** the form is shown again with "must be 15 digits" on the microchip number
++- **AND** nothing is saved
++
++#### Scenario: A 10-character non-ISO number is rejected
++
++- **WHEN** the add form is submitted with the microchip number "0A0139F53B"
++- **THEN** the form is shown again with "must be 15 digits" on the microchip number
++- **AND** nothing is saved
++
++### Requirement: Microchip number is unique across all pets
++
++The system MUST reject a microchip number that another pet already has, whichever owner that pet belongs to, with the error "is already in use" on the microchip number. The error SHALL NOT name or show the other pet, its owner or any of their details.
++
++#### Scenario: A number held by another owner's pet
++
++- **WHEN** a pet of owner A has the microchip number "985141000123456" and the add form for owner B is submitted with " 985141000123456"
++- **THEN** the form is shown again with "is already in use" on the microchip number
++- **AND** nothing is saved
++- **AND** the page shows neither the other pet's name nor owner A's name
++
++#### Scenario: Editing a pet to another pet's number
++
++- **WHEN** the owner has pets "petty" and "doggy", "petty" has the microchip number "985141000123456", and "doggy" is edited to the microchip number "985 141 000 123 456"
++- **THEN** the form is shown again with "is already in use" on the microchip number
++- **AND** nothing is saved
++
++### Requirement: A pet keeps its own microchip number
++
++The system SHALL NOT report a pet's own microchip number as a duplicate, compared after spaces are removed. Saving a pet again with the number it already has SHALL be accepted.
++
++#### Scenario: Saving a pet with its own number
++
++- **WHEN** the pet "petty" has the microchip number "985141000123456" and its edit form is submitted with "985 141 000 123 456" and otherwise valid values
++- **THEN** the edit is saved
++- **AND** "petty" still has the microchip number "985141000123456"
++
++### Requirement: A pet's microchip number can be changed
++
++The system SHALL let the edit form replace a pet's stored microchip number with another one. The new number SHALL be checked by the same rules as on the add form.
++
++#### Scenario: A new number replaces the stored one
++
++- **WHEN** the pet "petty" has the microchip number "985141000123456" and its edit form is submitted with "985141000654321" and otherwise valid values
++- **THEN** "petty" has the microchip number "985141000654321"
++
++#### Scenario: A malformed new number is rejected
++
++- **WHEN** the pet "petty" has the microchip number "985141000123456" and its edit form is submitted with "12345"
++- **THEN** the form is shown again with "must be 15 digits" on the microchip number
++- **AND** "petty" still has the microchip number "985141000123456" in the database
++
++### Requirement: Clearing the microchip number on the edit form removes it
++
++The system SHALL remove a pet's stored microchip number when the edit form is submitted with an empty or blank microchip number.
++
++#### Scenario: The field is cleared
++
++- **WHEN** the pet "petty" has the microchip number "985141000123456" and its edit form is submitted with an empty microchip number and otherwise valid values
++- **THEN** the edit is saved
++- **AND** "petty" has no microchip number
++
++### Requirement: The edit form shows the stored microchip number
++
++The system SHALL fill the microchip number field of the edit form with the pet's stored microchip number, so that an empty field on submission is a deliberate choice. A pet without a microchip number SHALL show an empty field.
++
++#### Scenario: A pet with a number
++
++- **WHEN** the edit form is opened for a pet with the microchip number "985141000123456"
++- **THEN** the microchip number field holds "985141000123456"
++
++#### Scenario: A pet without a number
++
++- **WHEN** the edit form is opened for a pet without a microchip number
++- **THEN** the microchip number field is empty
++
++### Requirement: One microchip number error at a time
++
++The system SHALL report at most one error on the microchip number. A malformed number SHALL get "must be 15 digits" only, and a well-formed duplicate SHALL get "is already in use" only.
++
++#### Scenario: A malformed number is not checked for duplicates
++
++- **WHEN** a pet has the microchip number "985141000123456" and the add form is submitted with "985141000123456-"
++- **THEN** the form is shown again with exactly one error on the microchip number, "must be 15 digits"
++
++#### Scenario: A duplicate gets only the duplicate error
++
++- **WHEN** a pet has the microchip number "985141000123456" and the add form for another owner is submitted with "985141000123456"
++- **THEN** the form is shown again with exactly one error on the microchip number, "is already in use"
++
++### Requirement: Duplicate microchip numbers caught by the database
++
++When the database rejects a save because of the unique constraint on the microchip number, the system SHALL show the form again with "is already in use" on the microchip number. The constraint SHALL have the same name on H2, MySQL and Postgres.
++
++#### Scenario: Two simultaneous adds with the same number
++
++- **WHEN** two add requests, for different owners, with the same new microchip number arrive at the same time
++- **THEN** exactly one pet with that microchip number is saved
++- **AND** the other request adds no pet
++- **AND** the other request gets the form again with "is already in use" on the microchip number
++
++#### Scenario: The constraint is reported as a duplicate microchip number
++
++- **WHEN** saving the owner fails with a data integrity violation whose message names the microchip number constraint, in any case
++- **THEN** the form is shown again with "is already in use" on the microchip number
++- **AND** the form does not show a duplicate-name error
++
++#### Scenario: The name constraint is still reported on the name
++
++- **WHEN** saving the owner fails with a data integrity violation whose message names `unique_owner_pet_name`
++- **THEN** the form is shown again with "is already in use" on the name
++- **AND** the form does not show an error on the microchip number
++
++## MODIFIED Requirements
++
++### Requirement: Duplicate names caught by the database
++
++When the database rejects a save because of the unique constraint on owner and pet name, the system SHALL show the form again with "is already in use" on the name. The system MUST NOT report any other data integrity violation as a duplicate name. A violation of the unique constraint on the microchip number is handled by the requirement "Duplicate microchip numbers caught by the database".
++
++#### Scenario: Two simultaneous adds with the same name
++
++- **WHEN** two add requests for the same owner and the same new name arrive at the same time
++- **THEN** exactly one pet with that name is saved
++- **AND** the other request adds no pet
++
++#### Scenario: The constraint is reported as a duplicate name
++
++- **WHEN** saving the owner fails with a data integrity violation whose message names `unique_owner_pet_name`, in any case
++- **THEN** the form is shown again with "is already in use" on the name
++
++#### Scenario: Another integrity violation
++
++- **WHEN** saving the owner fails with a data integrity violation that names neither the owner-and-pet-name constraint nor the microchip number constraint
++- **THEN** the request fails with that error
++- **AND** the form does not show a duplicate-name error
++- **AND** the form does not show an error on the microchip number
++
++### Requirement: Validation errors are reported together
++
++The system SHALL report every validation error of a submission at once, in no particular order, including an error on the microchip number, and SHALL NOT save the pet while any error remains.
++
++#### Scenario: Three errors on the add form
++
++- **WHEN** the add form is submitted with no type, the name of an existing pet and tomorrow's date
++- **THEN** the form is shown again with three errors: "is required" on the type, "is already in use" on the name and "invalid date" on the birth date
++
++#### Scenario: Two errors on the edit form
++
++- **WHEN** a pet with no stored birth date is edited to the name of another pet, without a birth date
++- **THEN** the form is shown again with two errors: "is required" on the birth date and "is already in use" on the name
++
++#### Scenario: Three errors on the add form, one on the microchip number
++
++- **WHEN** the add form is submitted with a valid type, the name of an existing pet of the owner, tomorrow's date and the microchip number "123"
++- **THEN** the form is shown again with three errors: "is already in use" on the name, "invalid date" on the birth date and "must be 15 digits" on the microchip number
++
++#### Scenario: Two errors on the edit form, one on the microchip number
++
++- **WHEN** a pet is edited with an empty birth date and the microchip number of another owner's pet
++- **THEN** the form is shown again with two errors: "is required" on the birth date and "is already in use" on the microchip number
+diff --git a/openspec/changes/pc-301/tasks.md b/openspec/changes/pc-301/tasks.md
+new file mode 100644
+index 0000000..6b16290
+--- /dev/null
++++ b/openspec/changes/pc-301/tasks.md
+@@ -0,0 +1,61 @@
++# Tasks
++
++Baseline: before starting, run `./mvnw test` and note any failures that already exist, so they are not blamed on this change.
++
++The change ships in two releases, in this order (design Decision 8, D25): release 1 is section 0 alone; then the migration script runs; then release 2 is sections 1 to 6.
++
++## 0. Release 1: column lists for the seed inserts
++
++- [x] 0.1 Give the pet inserts in `db/h2/data.sql` and `db/mysql/data.sql` a column list (`id, name, birth_date, type_id, owner_id`), because they insert by position today (`db/h2/data.sql:36-48`, `db/mysql/data.sql:36-48`). Change nothing else: no schema change, no migration script, no microchip number. Leave `db/postgres/data.sql` unchanged: it already names its columns. Verify: the app starts on H2, `./mvnw test` passes with no failures beyond those noted at the baseline, and the release-1 diff touches only those two files. Where Docker is available, also run `MySqlIntegrationTests`; without Docker it is skipped, so report it as not run.
++- [ ] 0.2 Release 1 is merged and released on its own, before any task of release 2 is merged. Deployment step 1 of design Decision 8 (release 1 deployed, no older instance left) must be done before the migration script runs on any database.
++
++## Release 2: the microchip number
++
++Deployment: run the migration script of task 1.5 after release 1 is deployed, then deploy release 2. Rollback from release 2 redeploys release 1, never the code before it (design Decision 8).
++
++## 1. Schema and entity
++
++- [x] 1.1 Add the nullable `microchip_number` column and the constraint `unique_pet_microchip_number` to `db/h2/schema.sql`, `db/mysql/schema.sql` and `db/postgres/schema.sql`, as in design Decisions 1 and 5. The seed inserts already name their columns (task 0.1). No seeded pet gets a microchip number (F8). Verify: the app starts on H2 and `./mvnw test -Dtest=ClinicServiceTests` passes.
++- [x] 1.2 Add `microchipNumber` to `Pet`, with the normalising setter from design Decision 2 (trim, remove spaces, empty becomes `null`). Verify: new unit tests in `PetTests` or `OwnerTests` show that `" 985 141 000 123 456 "` becomes `"985141000123456"`, that `"   "` and `""` become `null`, and that `"985-141-000-123-456"` is kept as it is. Run them with `./mvnw test -Dtest=OwnerTests` (or the new class).
++- [x] 1.3 Add `PetRepository` with `existsByMicrochipNumber` and `existsByMicrochipNumberAndIdNot`. Verify: a test against H2 in `ClinicServiceTests` shows that both queries find another pet's number, that `existsByMicrochipNumberAndIdNot` does not find the pet's own number, and that two pets with no number can be saved. This covers the scenario "Two pets without a microchip number".
++- [x] 1.4 Add a deterministic test of the database duplicate on H2 to `ClinicServiceTests`, modelled on `shouldFailToInsertDuplicatePetNameForSameOwner` (`ClinicServiceTests.java:253-277`). It saves two pets, for different owners, with the same microchip number through `OwnerRepository.saveAndFlush`, so `PetValidator` does not run. It asserts that the save throws `DataIntegrityViolationException` and that the exception's message contains `unique_pet_microchip_number`, ignoring case. This is the only test that reads H2's real message: the race test (task 4.2) may never reach the `catch` (design, Risks). Verify: `./mvnw test -Dtest=ClinicServiceTests` passes.
++- [ ] 1.5 Add the migration scripts of design Decision 8 (D23): `src/main/resources/db/mysql/migrate-pc-301-microchip-number.sql` and `src/main/resources/db/postgres/migrate-pc-301-microchip-number.sql`, each adding the nullable column first and the constraint `unique_pet_microchip_number` second, with a leading comment that says to run it after release 1 is deployed and before release 2 is (D25). None for H2. Add one migration test per database, following the existing patterns and adding no dependency to `pom.xml` (D26, F13): the MySQL test uses a `testcontainers-mysql` container with `@Testcontainers(disabledWithoutDocker = true)`, as `MySqlIntegrationTests.java:43-49` does; the Postgres test starts Postgres through Spring Boot's Docker Compose support and skips itself without Docker, as `PostgresIntegrationTests.java:51-52,68` does. If either test cannot be written without a new dependency, stop and raise it with the ticket owner. Each test creates the `pets` table and the tables it references from the `schema.sql` of release 1 (the same as before this change), kept as a test resource, and inserts a pet. It then runs the migration script and checks that the existing pet has no microchip number, that two pets without a number can be saved, and that a second pet with the same number is rejected with an error that names `unique_pet_microchip_number`, ignoring case. Finally it runs the new `schema.sql` against the migrated database and checks that it succeeds, which is what step 3 of the deployment in Decision 8 relies on. Verify: with Docker, both tests pass. Without Docker they are skipped: report them as not run, not as passed (known gap, D23).
++
++## 2. Validator rules
++
++- [x] 2.1 Give `PetValidator` a `PetRepository` constructor argument and add the format check `[0-9]{15}` with code `microchipNumber.invalid`. Verify: `PetValidatorTests` covers 15 digits accepted, `000000000000001` accepted, 14 and 16 digits rejected, `0A0139F53B` rejected, a dashed number rejected, and no number accepted. That is the spec requirements "Microchip number is optional", "is stored as its digits" and "is exactly 15 digits".
++- [x] 2.2 Add the uniqueness check with code `duplicate`. It runs only when the format check passes, with `existsByMicrochipNumber` for a new pet and `existsByMicrochipNumberAndIdNot` for an existing one. Verify: `PetValidatorTests`, with a mocked `PetRepository`, covers another pet's number rejected, the pet's own number accepted, and a malformed number that never reaches the repository and gets exactly one error. That is the spec requirements "unique across all pets", "A pet keeps its own microchip number" and "One microchip number error at a time".
++- [x] 2.3 Add `microchipNumber` and `microchipNumber.invalid` to `messages.properties` and every `messages_*.properties` except `messages_en`. Verify: `./mvnw test -Dtest=I18nPropertiesSyncTest` passes.
++
++## 3. Pet forms
++
++- [x] 3.1 Inject `PetRepository` into `PetController` and build the validator with it in `initPetBinder`. Add `@MockitoBean PetRepository` to `PetControllerTests` and `PetControllerCharacterizationTests`. Verify: both classes pass unchanged otherwise, which shows the baseline `pets` behaviour still holds.
++- [x] 3.2 Copy `microchipNumber`, including `null`, in `updatePetDetails`. Verify: new `PetControllerTests` cases for "A new number replaces the stored one", "The field is cleared" and "Saving a pet with its own number" pass. Also check that the existing `editCopiesNameBirthDateAndTypeOntoOwnersPetWhenInstancesDiffer` still passes.
++- [x] 3.3 Add the microchip number input to `pets/createOrUpdatePetForm.html`. Verify: `PetControllerTests` asserts that the edit form for a pet with `985141000123456` holds that value and that a pet without a number shows an empty field. `./mvnw test -Dtest=I18nPropertiesSyncTest` still passes.
++- [x] 3.4 Verify in `PetControllerTests`:
++  - the combined-error scenarios "Three errors on the add form, one on the microchip number" (with a valid type) and "Two errors on the edit form, one on the microchip number", including "is already in use" on the microchip number;
++  - that the duplicate response for another owner's number contains neither the other pet's name nor the other owner's name;
++  - "Editing a pet to another pet's number", with "petty" and "doggy" of the same owner;
++  - "Spaces are removed" and "Fifteen digits are accepted" at the controller: the add form submitted with " 985 141 000 123 456 " and with "985141000123456" redirects, and the new pet on the owner passed to `OwnerRepository.saveAndFlush` has the microchip number "985141000123456".
++- [x] 3.5 Add the G3 test (D21): one `@SpringBootTest` on H2 that goes through the forms. It adds a pet with "985141000123456", edits it to "985141000654321", then clears it. After each step it reads the stored value from the database: "985141000123456", then "985141000654321", then no number. It also submits an edit with "12345" for a pet that has a number, and checks that the form is shown again with "must be 15 digits" and that the stored value is unchanged. This covers "A new number replaces the stored one", "The field is cleared" and "A malformed new number is rejected" against a real database, and the detached-entity claim in design Decision 4. Verify: the test passes with `./mvnw test -Dtest=<the new class>`.
++
++## 4. Duplicates caught by the database
++
++- [x] 4.1 Add the `PetValidator` method from design Decision 5 (D19), which rejects `microchipNumber` with the code `duplicate`. In both POST handlers, when a `DataIntegrityViolationException` names `unique_pet_microchip_number` (ignoring case), call that method before the name check and show the form again. Add no `rejectValue` call to `PetController`. Verify: a `PetValidatorTests` case shows that the method puts exactly one error, `duplicate`, on `microchipNumber`. New `PetControllerTests` cases for "The constraint is reported as a duplicate microchip number" and "The name constraint is still reported on the name" pass, and `createOtherIntegrityViolationIsRethrown` still passes (the MODIFIED scenario "Another integrity violation").
++- [x] 4.2 Add a race test for two simultaneous adds, for different owners, with the same microchip number to `PetClinicConcurrencyTests`, modelled on `testDuplicatePetNameRaceConditionIsBlocked`. Unlike that template, which counts any non-2xx response or exception as a failure (`PetClinicConcurrencyTests.java:86-95`), assert that the losing request gets the form again (status 200) with "is already in use" on the microchip number. Verify: exactly one pet with the number is saved on H2, and the losing response carries that error. The response is the same whether the validator or the database `catch` rejected the losing request, so this test does not show that H2's real message is recognised; task 1.4 does. Where Docker is available, also run `MySqlIntegrationTests` and `PostgresIntegrationTests`. If Docker is missing they are skipped, so report them as not run rather than as passed. They do not test the microchip constraint through the forms either way (known gap recorded with D20, design Risks).
++- [x] 4.3 Run `./mvnw test -Dtest=ArchitectureTests`. Verify: it passes with the freeze store unchanged. If it fails, do not edit or regenerate `src/test/resources/archunit_store/`. Stop and raise it with the ticket owner (design Decision 5).
++
++## 5. Owner's page
++
++- [x] 5.1 Add the "Microchip number" label and value to `owners/ownerDetails.html`, after the type. Verify: `OwnerControllerTests` asserts the label with `985141000123456` for a pet with a number, and the label with an empty value (not "none") for a pet without one. That is the spec `owner-details`.
++
++## 6. Integration check
++
++- [ ] 6.1 Run `./mvnw spring-javaformat:apply` and then the full `./mvnw test`. Verify: the build passes, and no failures appear beyond those noted at the baseline.
++- [x] 6.2 Run `openspec validate pc-301 --strict`. Verify: it reports the change as valid.
++
++## Workflow follow-up
++
++- When archiving, update the Purpose of `openspec/specs/pets/spec.md`. It says the spec does not cover the GET forms, but the requirement "The edit form shows the stored microchip number" is a GET-form behaviour.
++  - Check (H2): after archiving, read the Purpose of the archived `openspec/specs/pets/spec.md` and confirm it no longer excludes the GET forms, then run `openspec validate --specs --strict`.
++- Open the two follow-up tickets from `decisions.md`: looking up a pet by its microchip number (D5), and the unnamed MySQL owner-and-pet-name constraint (D13, F4). The lookup ticket should name the wrong-pet case accepted in D22 as something it fixes, and list the microchip number on the visit form (`templates/pets/createOrUpdateVisitForm.html`), which this change leaves out (D24).
+diff --git a/openspec/specs/pets/spec.md b/openspec/specs/pets/spec.md
+new file mode 100644
+index 0000000..3727a33
+--- /dev/null
++++ b/openspec/specs/pets/spec.md
+@@ -0,0 +1,176 @@
++# pets Specification
++
++## Purpose
++
++Adding a pet to an owner and editing an existing pet through the pet form, at `/owners/{ownerId}/pets/new` and `/owners/{ownerId}/pets/{petId}/edit`. This is a baseline of current behaviour, written from characterization tests, for the state the Week 2 class left on 26 October: `he-petclinic` branch `week-2-sensors` with the class runs of e9, e10 and e11 applied. It covers the two POST handlers of `PetController` and the `PetValidator` they use. It does not cover the GET forms, owners, visits or vets.
++
++## Requirements
++
++### Requirement: Add a pet to an owner
++
++The system SHALL save a valid new pet against its owner, then redirect to the owner's page with the message "New Pet has been Added".
++
++#### Scenario: A valid pet is added
++
++- **WHEN** the add form is submitted for an owner with name "Betty", type "hamster" and birth date 2015-02-12
++- **THEN** the owner is saved with one more pet, named "Betty", of type "hamster", born 2015-02-12
++- **AND** the browser is redirected to the owner's page with the message "New Pet has been Added"
++
++### Requirement: Edit a pet in place
++
++The system SHALL apply a valid edit to the existing pet record, keeping its identity and the owner's number of pets, then redirect to the owner's page with the message "Pet details has been edited".
++
++#### Scenario: A valid edit is saved to the same pet
++
++- **WHEN** the edit form for the pet "petty" is submitted with name "Betty", type "snake" and birth date 2015-02-12
++- **THEN** the same pet record has name "Betty", type "snake" and birth date 2015-02-12
++- **AND** the owner has the same number of pets as before
++- **AND** the browser is redirected to the owner's page with the message "Pet details has been edited"
++
++### Requirement: Pet name is required
++
++The system MUST reject a blank pet name on either form with the error "is required" on the name, and SHALL NOT report a blank name as a duplicate.
++
++#### Scenario: Blank name on the add form
++
++- **WHEN** the add form is submitted with the name " " and a valid type and birth date
++- **THEN** the form is shown again with exactly one error, "is required", on the name
++- **AND** nothing is saved
++
++#### Scenario: Blank name on the edit form
++
++- **WHEN** the edit form is submitted with an empty name
++- **THEN** the form is shown again with "is required" on the name
++- **AND** nothing is saved
++
++### Requirement: Pet name is at most 30 characters
++
++The system MUST reject a pet name longer than 30 characters on either form, and SHALL accept a name of exactly 30 characters.
++
++#### Scenario: Thirty characters is accepted
++
++- **WHEN** either form is submitted with a name of 30 characters and otherwise valid values
++- **THEN** the pet is saved and the browser is redirected to the owner's page
++
++#### Scenario: Thirty-one characters is rejected
++
++- **WHEN** either form is submitted with a name of 31 characters
++- **THEN** the form is shown again with an error on the name
++- **AND** nothing is saved
++
++### Requirement: Pet name is unique per owner, ignoring case
++
++The system MUST reject a pet name that another pet of the same owner already has, compared without regard to case, with the error "is already in use" on the name. Renaming a pet to its own name in a different case SHALL be accepted.
++
++#### Scenario: Adding a pet whose name differs only in case
++
++- **WHEN** the owner has a pet named "petty" and the add form is submitted with the name "PETTY"
++- **THEN** the form is shown again with "is already in use" on the name
++- **AND** nothing is saved
++
++#### Scenario: Renaming a pet to another pet's name
++
++- **WHEN** the owner has pets "petty" and "doggy" and "doggy" is edited to the name "PETTY"
++- **THEN** the form is shown again with "is already in use" on the name
++- **AND** nothing is saved
++
++#### Scenario: Renaming a pet to its own name in another case
++
++- **WHEN** the pet "petty" is edited to the name "PETTY"
++- **THEN** the edit is saved
++
++### Requirement: Duplicate names caught by the database
++
++When the database rejects a save because of the unique constraint on owner and pet name, the system SHALL show the form again with "is already in use" on the name. The system MUST NOT report any other data integrity violation as a duplicate name.
++
++#### Scenario: Two simultaneous adds with the same name
++
++- **WHEN** two add requests for the same owner and the same new name arrive at the same time
++- **THEN** exactly one pet with that name is saved
++- **AND** the other request adds no pet
++
++#### Scenario: The constraint is reported as a duplicate name
++
++- **WHEN** saving the owner fails with a data integrity violation whose message names `unique_owner_pet_name`, in any case
++- **THEN** the form is shown again with "is already in use" on the name
++
++#### Scenario: Another integrity violation
++
++- **WHEN** saving the owner fails with a data integrity violation that does not name the owner-and-pet-name constraint
++- **THEN** the request fails with that error
++- **AND** the form does not show a duplicate-name error
++
++### Requirement: Birth date is required
++
++The system MUST reject a missing or empty birth date on either form with the error "is required" on the birth date.
++
++#### Scenario: Empty birth date
++
++- **WHEN** either form is submitted with an empty birth date
++- **THEN** the form is shown again with "is required" on the birth date
++- **AND** nothing is saved
++
++### Requirement: Birth date is a valid date, not in the future
++
++The system MUST reject, on either form, a birth date that is not a date in the format yyyy-MM-dd or that is later than today, with the error "invalid date" on the birth date. A birth date of today SHALL be accepted.
++
++#### Scenario: Today is accepted
++
++- **WHEN** either form is submitted with today's date as the birth date
++- **THEN** the pet is saved
++
++#### Scenario: A future date is rejected on the add form
++
++- **WHEN** the add form is submitted with tomorrow's date as the birth date
++- **THEN** the form is shown again with "invalid date" on the birth date
++- **AND** nothing is saved
++
++#### Scenario: A future date is rejected on the edit form
++
++- **WHEN** the edit form is submitted with a birth date one month from today
++- **THEN** the form is shown again with "invalid date" on the birth date
++- **AND** nothing is saved
++
++#### Scenario: A malformed date is rejected
++
++- **WHEN** the add form is submitted with the birth date "2015/02/12"
++- **THEN** the form is shown again with two errors on the birth date: "invalid date" and "is required"
++
++### Requirement: Pet type is required when adding a pet
++
++The system MUST reject a new pet that has no type, with the error "is required" on the type, and MUST reject a type name that does not match a known pet type.
++
++#### Scenario: No type on the add form
++
++- **WHEN** the add form is submitted without a type
++- **THEN** the form is shown again with "is required" on the type
++- **AND** nothing is saved
++
++#### Scenario: Unknown type on the add form
++
++- **WHEN** the add form is submitted with the type "lizard", which is not a known pet type
++- **THEN** the form is shown again with an error on the type
++
++### Requirement: Validation errors are reported together
++
++The system SHALL report every validation error of a submission at once, in no particular order, and SHALL NOT save the pet while any error remains.
++
++#### Scenario: Three errors on the add form
++
++- **WHEN** the add form is submitted with no type, the name of an existing pet and tomorrow's date
++- **THEN** the form is shown again with three errors: "is required" on the type, "is already in use" on the name and "invalid date" on the birth date
++
++#### Scenario: Two errors on the edit form
++
++- **WHEN** a pet with no stored birth date is edited to the name of another pet, without a birth date
++- **THEN** the form is shown again with two errors: "is required" on the birth date and "is already in use" on the name
++
++### Requirement: The pet id cannot be set from the form
++
++The system MUST ignore an `id` parameter submitted with either form. The pet that is added or edited SHALL be chosen by the URL alone.
++
++#### Scenario: An id parameter on the edit form
++
++- **WHEN** the edit form for pet 1 is submitted with the extra parameter `id=99`
++- **THEN** pet 1 is updated
++- **AND** no pet with id 99 exists afterwards
+diff --git a/src/main/java/org/springframework/samples/petclinic/owner/Pet.java b/src/main/java/org/springframework/samples/petclinic/owner/Pet.java
+index 4f8409e..7f11db1 100644
+--- a/src/main/java/org/springframework/samples/petclinic/owner/Pet.java
++++ b/src/main/java/org/springframework/samples/petclinic/owner/Pet.java
+@@ -53,6 +53,9 @@ public class Pet extends NamedEntity {
+ 	@JoinColumn(name = "type_id")
+ 	private PetType type;
+ 
++	@Column
++	private String microchipNumber;
++
+ 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+ 	@JoinColumn(name = "pet_id")
+ 	@OrderBy("date ASC")
+@@ -74,6 +77,19 @@ public class Pet extends NamedEntity {
+ 		this.type = type;
+ 	}
+ 
++	public String getMicrochipNumber() {
++		return this.microchipNumber;
++	}
++
++	/**
++	 * Trims the value and removes its spaces. Any other character is kept, so that the
++	 * validator rejects it. An empty result is stored as no microchip number.
++	 */
++	public void setMicrochipNumber(String microchipNumber) {
++		String normalised = (microchipNumber != null) ? microchipNumber.trim().replace(" ", "") : null;
++		this.microchipNumber = (normalised == null || normalised.isEmpty()) ? null : normalised;
++	}
++
+ 	public Collection<Visit> getVisits() {
+ 		return this.visits;
+ 	}
+diff --git a/src/main/java/org/springframework/samples/petclinic/owner/PetController.java b/src/main/java/org/springframework/samples/petclinic/owner/PetController.java
+index 04d0b1a..507bbfb 100644
+--- a/src/main/java/org/springframework/samples/petclinic/owner/PetController.java
++++ b/src/main/java/org/springframework/samples/petclinic/owner/PetController.java
+@@ -53,9 +53,12 @@ class PetController {
+ 
+ 	private final PetTypeRepository types;
+ 
+-	public PetController(OwnerRepository owners, PetTypeRepository types) {
++	private final PetValidator petValidator;
++
++	public PetController(OwnerRepository owners, PetTypeRepository types, PetRepository pets) {
+ 		this.owners = owners;
+ 		this.types = types;
++		this.petValidator = new PetValidator(pets);
+ 	}
+ 
+ 	@ModelAttribute("types")
+@@ -92,7 +95,7 @@ class PetController {
+ 
+ 	@InitBinder("pet")
+ 	public void initPetBinder(WebDataBinder dataBinder) {
+-		dataBinder.setValidator(new PetValidator());
++		dataBinder.setValidator(this.petValidator);
+ 		dataBinder.setDisallowedFields("id", "*.id");
+ 	}
+ 
+@@ -120,6 +123,10 @@ class PetController {
+ 			this.owners.saveAndFlush(owner);
+ 		}
+ 		catch (DataIntegrityViolationException ex) {
++			if (isDuplicateMicrochipNumberViolation(ex)) {
++				this.petValidator.rejectDuplicateMicrochipNumber(result);
++				return VIEWS_PETS_CREATE_OR_UPDATE_FORM;
++			}
+ 			if (!isDuplicatePetNameViolation(ex)) {
+ 				throw ex;
+ 			}
+@@ -151,6 +158,10 @@ class PetController {
+ 			updatePetDetails(owner, pet);
+ 		}
+ 		catch (DataIntegrityViolationException ex) {
++			if (isDuplicateMicrochipNumberViolation(ex)) {
++				this.petValidator.rejectDuplicateMicrochipNumber(result);
++				return VIEWS_PETS_CREATE_OR_UPDATE_FORM;
++			}
+ 			if (!isDuplicatePetNameViolation(ex)) {
+ 				throw ex;
+ 			}
+@@ -183,6 +194,8 @@ class PetController {
+ 			existingPet.setName(pet.getName());
+ 			existingPet.setBirthDate(pet.getBirthDate());
+ 			existingPet.setType(pet.getType());
++			// null included: an empty field removes the stored number
++			existingPet.setMicrochipNumber(pet.getMicrochipNumber());
+ 		}
+ 		else {
+ 			owner.addPet(pet);
+@@ -195,4 +208,9 @@ class PetController {
+ 		return message != null && message.toLowerCase().contains("unique_owner_pet_name");
+ 	}
+ 
++	private boolean isDuplicateMicrochipNumberViolation(DataIntegrityViolationException ex) {
++		String message = ex.getMessage();
++		return message != null && message.toLowerCase().contains("unique_pet_microchip_number");
++	}
++
+ }
+diff --git a/src/main/java/org/springframework/samples/petclinic/owner/PetRepository.java b/src/main/java/org/springframework/samples/petclinic/owner/PetRepository.java
+new file mode 100644
+index 0000000..f7fc0ba
+--- /dev/null
++++ b/src/main/java/org/springframework/samples/petclinic/owner/PetRepository.java
+@@ -0,0 +1,39 @@
++/*
++ * Copyright 2012-2025 the original author or authors.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      https://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package org.springframework.samples.petclinic.owner;
++
++import org.springframework.data.repository.Repository;
++
++/**
++ * Repository class for <code>Pet</code> domain objects. It holds only the queries that
++ * the microchip number check in {@link PetValidator} needs.
++ */
++public interface PetRepository extends Repository<Pet, Integer> {
++
++	/**
++	 * Whether any pet has the given microchip number. Used for a new pet, which has no id
++	 * yet.
++	 */
++	boolean existsByMicrochipNumber(String microchipNumber);
++
++	/**
++	 * Whether any pet other than the one with the given id has the given microchip
++	 * number. Used for an existing pet, so that it never conflicts with its own number.
++	 */
++	boolean existsByMicrochipNumberAndIdNot(String microchipNumber, Integer id);
++
++}
+diff --git a/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java b/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
+index cd0c807..3366d70 100644
+--- a/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
++++ b/src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java
+@@ -16,6 +16,7 @@
+ package org.springframework.samples.petclinic.owner;
+ 
+ import java.time.LocalDate;
++import java.util.regex.Pattern;
+ 
+ import org.springframework.util.StringUtils;
+ import org.springframework.validation.Errors;
+@@ -37,6 +38,17 @@ public class PetValidator implements Validator {
+ 
+ 	private static final int MAX_NAME_LENGTH = 30;
+ 
++	private static final String MICROCHIP_NUMBER = "microchipNumber";
++
++	// [0-9] rather than \d, so the rule cannot widen to other digit characters.
++	private static final Pattern MICROCHIP_NUMBER_FORMAT = Pattern.compile("[0-9]{15}");
++
++	private final PetRepository pets;
++
++	public PetValidator(PetRepository pets) {
++		this.pets = pets;
++	}
++
+ 	@Override
+ 	public void validate(Object obj, Errors errors) {
+ 		Pet pet = (Pet) obj;
+@@ -61,6 +73,35 @@ public class PetValidator implements Validator {
+ 		else if (pet.getBirthDate().isAfter(LocalDate.now())) {
+ 			errors.rejectValue("birthDate", "typeMismatch.birthDate");
+ 		}
++
++		// microchip number validation: optional, and at most one error. The uniqueness
++		// query runs only for a well-formed number, never for a pet without one.
++		String microchipNumber = pet.getMicrochipNumber();
++		if (microchipNumber != null) {
++			if (!MICROCHIP_NUMBER_FORMAT.matcher(microchipNumber).matches()) {
++				errors.rejectValue(MICROCHIP_NUMBER, "microchipNumber.invalid");
++			}
++			else if (isMicrochipNumberTakenByAnotherPet(pet)) {
++				rejectDuplicateMicrochipNumber(errors);
++			}
++		}
++	}
++
++	/**
++	 * Rejects the microchip number as a duplicate. The controller calls this when the
++	 * database's unique constraint catches a duplicate that validation could not see. The
++	 * error names no other pet or owner.
++	 */
++	public void rejectDuplicateMicrochipNumber(Errors errors) {
++		errors.rejectValue(MICROCHIP_NUMBER, "duplicate");
++	}
++
++	private boolean isMicrochipNumberTakenByAnotherPet(Pet pet) {
++		// A new pet has no id, and "id <> NULL" never matches, so it needs its own query.
++		if (pet.isNew()) {
++			return this.pets.existsByMicrochipNumber(pet.getMicrochipNumber());
++		}
++		return this.pets.existsByMicrochipNumberAndIdNot(pet.getMicrochipNumber(), pet.getId());
+ 	}
+ 
+ 	/**
+diff --git a/src/main/resources/db/h2/data.sql b/src/main/resources/db/h2/data.sql
+index f232b13..c67b397 100644
+--- a/src/main/resources/db/h2/data.sql
++++ b/src/main/resources/db/h2/data.sql
+@@ -33,19 +33,19 @@ INSERT INTO owners VALUES (default, 'Maria', 'Escobito', '345 Maple St.', 'Madis
+ INSERT INTO owners VALUES (default, 'David', 'Schroeder', '2749 Blackhawk Trail', 'Madison', '6085559435');
+ INSERT INTO owners VALUES (default, 'Carlos', 'Estaban', '2335 Independence La.', 'Waunakee', '6085555487');
+ 
+-INSERT INTO pets VALUES (default, 'Leo', '2010-09-07', 1, 1);
+-INSERT INTO pets VALUES (default, 'Basil', '2012-08-06', 6, 2);
+-INSERT INTO pets VALUES (default, 'Rosy', '2011-04-17', 2, 3);
+-INSERT INTO pets VALUES (default, 'Jewel', '2010-03-07', 2, 3);
+-INSERT INTO pets VALUES (default, 'Iggy', '2010-11-30', 3, 4);
+-INSERT INTO pets VALUES (default, 'George', '2010-01-20', 4, 5);
+-INSERT INTO pets VALUES (default, 'Samantha', '2012-09-04', 1, 6);
+-INSERT INTO pets VALUES (default, 'Max', '2012-09-04', 1, 6);
+-INSERT INTO pets VALUES (default, 'Lucky', '2011-08-06', 5, 7);
+-INSERT INTO pets VALUES (default, 'Mulligan', '2007-02-24', 2, 8);
+-INSERT INTO pets VALUES (default, 'Freddy', '2010-03-09', 5, 9);
+-INSERT INTO pets VALUES (default, 'Lucky', '2010-06-24', 2, 10);
+-INSERT INTO pets VALUES (default, 'Sly', '2012-06-08', 1, 10);
++INSERT INTO pets (id, name, birth_date, type_id, owner_id) VALUES (default, 'Leo', '2010-09-07', 1, 1);
++INSERT INTO pets (id, name, birth_date, type_id, owner_id) VALUES (default, 'Basil', '2012-08-06', 6, 2);
++INSERT INTO pets (id, name, birth_date, type_id, owner_id) VALUES (default, 'Rosy', '2011-04-17', 2, 3);
++INSERT INTO pets (id, name, birth_date, type_id, owner_id) VALUES (default, 'Jewel', '2010-03-07', 2, 3);
++INSERT INTO pets (id, name, birth_date, type_id, owner_id) VALUES (default, 'Iggy', '2010-11-30', 3, 4);
++INSERT INTO pets (id, name, birth_date, type_id, owner_id) VALUES (default, 'George', '2010-01-20', 4, 5);
++INSERT INTO pets (id, name, birth_date, type_id, owner_id) VALUES (default, 'Samantha', '2012-09-04', 1, 6);
++INSERT INTO pets (id, name, birth_date, type_id, owner_id) VALUES (default, 'Max', '2012-09-04', 1, 6);
++INSERT INTO pets (id, name, birth_date, type_id, owner_id) VALUES (default, 'Lucky', '2011-08-06', 5, 7);
++INSERT INTO pets (id, name, birth_date, type_id, owner_id) VALUES (default, 'Mulligan', '2007-02-24', 2, 8);
++INSERT INTO pets (id, name, birth_date, type_id, owner_id) VALUES (default, 'Freddy', '2010-03-09', 5, 9);
++INSERT INTO pets (id, name, birth_date, type_id, owner_id) VALUES (default, 'Lucky', '2010-06-24', 2, 10);
++INSERT INTO pets (id, name, birth_date, type_id, owner_id) VALUES (default, 'Sly', '2012-06-08', 1, 10);
+ 
+ INSERT INTO visits VALUES (default, 7, '2013-01-01', 'rabies shot');
+ INSERT INTO visits VALUES (default, 8, '2013-01-02', 'rabies shot');
+diff --git a/src/main/resources/db/h2/schema.sql b/src/main/resources/db/h2/schema.sql
+index f53b168..316dce9 100644
+--- a/src/main/resources/db/h2/schema.sql
++++ b/src/main/resources/db/h2/schema.sql
+@@ -48,11 +48,13 @@ CREATE TABLE pets (
+   name       VARCHAR_IGNORECASE(30),
+   birth_date DATE,
+   type_id    INTEGER NOT NULL,
+-  owner_id   INTEGER
++  owner_id   INTEGER,
++  microchip_number VARCHAR(15)
+ );
+ ALTER TABLE pets ADD CONSTRAINT fk_pets_owners FOREIGN KEY (owner_id) REFERENCES owners (id);
+ ALTER TABLE pets ADD CONSTRAINT fk_pets_types FOREIGN KEY (type_id) REFERENCES types (id);
+ ALTER TABLE pets ADD CONSTRAINT unique_owner_pet_name UNIQUE (owner_id, name);
++ALTER TABLE pets ADD CONSTRAINT unique_pet_microchip_number UNIQUE (microchip_number);
+ CREATE INDEX pets_name ON pets (name);
+ 
+ CREATE TABLE visits (
+diff --git a/src/main/resources/db/mysql/data.sql b/src/main/resources/db/mysql/data.sql
+index 3f1dcf8..9d84eb8 100644
+--- a/src/main/resources/db/mysql/data.sql
++++ b/src/main/resources/db/mysql/data.sql
+@@ -33,19 +33,19 @@ INSERT IGNORE INTO owners VALUES (8, 'Maria', 'Escobito', '345 Maple St.', 'Madi
+ INSERT IGNORE INTO owners VALUES (9, 'David', 'Schroeder', '2749 Blackhawk Trail', 'Madison', '6085559435');
+ INSERT IGNORE INTO owners VALUES (10, 'Carlos', 'Estaban', '2335 Independence La.', 'Waunakee', '6085555487');
+ 
+-INSERT IGNORE INTO pets VALUES (1, 'Leo', '2000-09-07', 1, 1);
+-INSERT IGNORE INTO pets VALUES (2, 'Basil', '2002-08-06', 6, 2);
+-INSERT IGNORE INTO pets VALUES (3, 'Rosy', '2001-04-17', 2, 3);
+-INSERT IGNORE INTO pets VALUES (4, 'Jewel', '2000-03-07', 2, 3);
+-INSERT IGNORE INTO pets VALUES (5, 'Iggy', '2000-11-30', 3, 4);
+-INSERT IGNORE INTO pets VALUES (6, 'George', '2000-01-20', 4, 5);
+-INSERT IGNORE INTO pets VALUES (7, 'Samantha', '1995-09-04', 1, 6);
+-INSERT IGNORE INTO pets VALUES (8, 'Max', '1995-09-04', 1, 6);
+-INSERT IGNORE INTO pets VALUES (9, 'Lucky', '1999-08-06', 5, 7);
+-INSERT IGNORE INTO pets VALUES (10, 'Mulligan', '1997-02-24', 2, 8);
+-INSERT IGNORE INTO pets VALUES (11, 'Freddy', '2000-03-09', 5, 9);
+-INSERT IGNORE INTO pets VALUES (12, 'Lucky', '2000-06-24', 2, 10);
+-INSERT IGNORE INTO pets VALUES (13, 'Sly', '2002-06-08', 1, 10);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (1, 'Leo', '2000-09-07', 1, 1);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (2, 'Basil', '2002-08-06', 6, 2);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (3, 'Rosy', '2001-04-17', 2, 3);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (4, 'Jewel', '2000-03-07', 2, 3);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (5, 'Iggy', '2000-11-30', 3, 4);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (6, 'George', '2000-01-20', 4, 5);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (7, 'Samantha', '1995-09-04', 1, 6);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (8, 'Max', '1995-09-04', 1, 6);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (9, 'Lucky', '1999-08-06', 5, 7);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (10, 'Mulligan', '1997-02-24', 2, 8);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (11, 'Freddy', '2000-03-09', 5, 9);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (12, 'Lucky', '2000-06-24', 2, 10);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (13, 'Sly', '2002-06-08', 1, 10);
+ 
+ INSERT IGNORE INTO visits VALUES (1, 7, '2010-03-04', 'rabies shot');
+ INSERT IGNORE INTO visits VALUES (2, 8, '2011-03-04', 'rabies shot');
+diff --git a/src/main/resources/db/mysql/migrate-pc-301-microchip-number.sql b/src/main/resources/db/mysql/migrate-pc-301-microchip-number.sql
+new file mode 100644
+index 0000000..6331010
+--- /dev/null
++++ b/src/main/resources/db/mysql/migrate-pc-301-microchip-number.sql
+@@ -0,0 +1,6 @@
++-- PC-301: add the microchip number to an existing MySQL pets table.
++-- Run this by hand AFTER release 1 (seed inserts with column lists) is deployed, with no
++-- older instance left running, and BEFORE release 2 (the microchip number) is deployed.
++-- Rollback from release 2 redeploys release 1 and leaves the column and constraint.
++ALTER TABLE pets ADD COLUMN microchip_number VARCHAR(15) NULL;
++ALTER TABLE pets ADD CONSTRAINT unique_pet_microchip_number UNIQUE (microchip_number);
+diff --git a/src/main/resources/db/mysql/schema.sql b/src/main/resources/db/mysql/schema.sql
+index ed53056..a993b5c 100644
+--- a/src/main/resources/db/mysql/schema.sql
++++ b/src/main/resources/db/mysql/schema.sql
+@@ -41,10 +41,12 @@ CREATE TABLE IF NOT EXISTS pets (
+   birth_date DATE,
+   type_id INT(4) UNSIGNED NOT NULL,
+   owner_id INT(4) UNSIGNED,
++  microchip_number VARCHAR(15),
+   INDEX(name),
+   FOREIGN KEY (owner_id) REFERENCES owners(id),
+   FOREIGN KEY (type_id) REFERENCES types(id),
+-  UNIQUE (owner_id, name)
++  UNIQUE (owner_id, name),
++  CONSTRAINT unique_pet_microchip_number UNIQUE (microchip_number)
+ ) engine=InnoDB;
+ 
+ CREATE TABLE IF NOT EXISTS visits (
+diff --git a/src/main/resources/db/postgres/migrate-pc-301-microchip-number.sql b/src/main/resources/db/postgres/migrate-pc-301-microchip-number.sql
+new file mode 100644
+index 0000000..d0b5a8b
+--- /dev/null
++++ b/src/main/resources/db/postgres/migrate-pc-301-microchip-number.sql
+@@ -0,0 +1,6 @@
++-- PC-301: add the microchip number to an existing Postgres pets table.
++-- Run this by hand AFTER release 1 (seed inserts with column lists) is deployed, with no
++-- older instance left running, and BEFORE release 2 (the microchip number) is deployed.
++-- Rollback from release 2 redeploys release 1 and leaves the column and index.
++ALTER TABLE pets ADD COLUMN IF NOT EXISTS microchip_number TEXT;
++CREATE UNIQUE INDEX IF NOT EXISTS unique_pet_microchip_number ON pets (microchip_number);
+diff --git a/src/main/resources/db/postgres/schema.sql b/src/main/resources/db/postgres/schema.sql
+index 05b450d..c0afbca 100644
+--- a/src/main/resources/db/postgres/schema.sql
++++ b/src/main/resources/db/postgres/schema.sql
+@@ -38,11 +38,13 @@ CREATE TABLE IF NOT EXISTS pets (
+   name       TEXT,
+   birth_date DATE,
+   type_id    INT NOT NULL REFERENCES types (id),
+-  owner_id   INT REFERENCES owners (id)
++  owner_id   INT REFERENCES owners (id),
++  microchip_number TEXT
+ );
+ CREATE INDEX IF NOT EXISTS idx_pets_name ON pets (name);
+ CREATE INDEX IF NOT EXISTS idx_pets_owner_id ON pets (owner_id);
+ CREATE UNIQUE INDEX IF NOT EXISTS unique_owner_pet_name ON pets (owner_id, LOWER(name));
++CREATE UNIQUE INDEX IF NOT EXISTS unique_pet_microchip_number ON pets (microchip_number);
+ 
+ CREATE TABLE IF NOT EXISTS visits (
+   id          INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+diff --git a/src/main/resources/messages/messages.properties b/src/main/resources/messages/messages.properties
+index 070c9f0..b190bc1 100644
+--- a/src/main/resources/messages/messages.properties
++++ b/src/main/resources/messages/messages.properties
+@@ -50,3 +50,5 @@ petsAndVisits=Pets and Visits
+ error.404=The requested page was not found.
+ error.500=An internal server error occurred.
+ error.general=An unexpected error occurred.
++microchipNumber=Microchip number
++microchipNumber.invalid=must be 15 digits
+diff --git a/src/main/resources/messages/messages_de.properties b/src/main/resources/messages/messages_de.properties
+index a4698d3..5c74e7d 100644
+--- a/src/main/resources/messages/messages_de.properties
++++ b/src/main/resources/messages/messages_de.properties
+@@ -50,3 +50,5 @@ petsAndVisits=Haustiere und Besuche
+ error.404=Die angeforderte Seite wurde nicht gefunden.
+ error.500=Ein interner Serverfehler ist aufgetreten.
+ error.general=Ein unerwarteter Fehler ist aufgetreten.
++microchipNumber=Mikrochipnummer
++microchipNumber.invalid=muss aus 15 Ziffern bestehen
+diff --git a/src/main/resources/messages/messages_es.properties b/src/main/resources/messages/messages_es.properties
+index 9e3c293..116d0bb 100644
+--- a/src/main/resources/messages/messages_es.properties
++++ b/src/main/resources/messages/messages_es.properties
+@@ -50,3 +50,5 @@ petsAndVisits=Mascotas y visitas
+ error.404=La página solicitada no fue encontrada.
+ error.500=Ocurrió un error interno del servidor.
+ error.general=Ocurrió un error inesperado.
++microchipNumber=Número de microchip
++microchipNumber.invalid=debe tener 15 dígitos
+diff --git a/src/main/resources/messages/messages_fa.properties b/src/main/resources/messages/messages_fa.properties
+index 2260298..4407d0a 100644
+--- a/src/main/resources/messages/messages_fa.properties
++++ b/src/main/resources/messages/messages_fa.properties
+@@ -50,3 +50,5 @@ petsAndVisits=حیوانات و ویزیت‌ها
+ error.404=صفحه درخواستی پیدا نشد.
+ error.500=خطای داخلی سرور رخ داد.
+ error.general=خطای غیرمنتظره‌ای رخ داد.
++microchipNumber=شماره میکروچیپ
++microchipNumber.invalid=باید ۱۵ رقم باشد
+diff --git a/src/main/resources/messages/messages_hi.properties b/src/main/resources/messages/messages_hi.properties
+index 8a22cc1..e51f53b 100644
+--- a/src/main/resources/messages/messages_hi.properties
++++ b/src/main/resources/messages/messages_hi.properties
+@@ -52,3 +52,5 @@ petsAndVisits=\u092A\u093E\u0932\u0924\u0942 \u0914\u0930 \u092F\u093E\u0924\u09
+ error.404=\u0905\u0928\u0941\u0930\u094B\u0927\u093F\u0924 \u092A\u0943\u0937\u094D\u0920 \u0928\u0939\u0940\u0902 \u092E\u093F\u0932\u093E\u0964
+ error.500=\u090F\u0915 \u0906\u0902\u0924\u0930\u093F\u0915 \u0938\u0930\u094D\u0935\u0930 \u0924\u094D\u0930\u0941\u091F\u093F \u0939\u0941\u0906\u0964
+ error.general=\u090F\u0915 \u0905\u092A\u094D\u0930\u0924\u094D\u092F\u093E\u0936\u093F\u0924 \u0924\u094D\u0930\u0941\u091F\u093F \u0939\u0941\u0906\u0964
++microchipNumber=\u092E\u093E\u0907\u0915\u094D\u0930\u094B\u091A\u093F\u092A \u0938\u0902\u0916\u094D\u092F\u093E
++microchipNumber.invalid=15 \u0905\u0902\u0915\u094B\u0902 \u0915\u093E \u0939\u094B\u0928\u093E \u091A\u093E\u0939\u093F\u090F
+diff --git a/src/main/resources/messages/messages_ja.properties b/src/main/resources/messages/messages_ja.properties
+index e60d875..312bf99 100644
+--- a/src/main/resources/messages/messages_ja.properties
++++ b/src/main/resources/messages/messages_ja.properties
+@@ -52,3 +52,5 @@ petsAndVisits=ペットと診察
+ error.404=リクエストされたページが見つかりませんでした。
+ error.500=サーバー内部エラーが発生しました。
+ error.general=予期しないエラーが発生しました。
++microchipNumber=マイクロチップ番号
++microchipNumber.invalid=15桁の数字で入力してください
+diff --git a/src/main/resources/messages/messages_ko.properties b/src/main/resources/messages/messages_ko.properties
+index b0f9f0d..5d16ac5 100644
+--- a/src/main/resources/messages/messages_ko.properties
++++ b/src/main/resources/messages/messages_ko.properties
+@@ -50,3 +50,5 @@ petsAndVisits=반려동물 및 방문
+ error.404=요청하신 페이지를 찾을 수 없습니다.
+ error.500=서버 내부 오류가 발생했습니다.
+ error.general=알 수 없는 오류가 발생했습니다.
++microchipNumber=마이크로칩 번호
++microchipNumber.invalid=15자리 숫자여야 합니다
+diff --git a/src/main/resources/messages/messages_pt.properties b/src/main/resources/messages/messages_pt.properties
+index c2efd77..51387ad 100644
+--- a/src/main/resources/messages/messages_pt.properties
++++ b/src/main/resources/messages/messages_pt.properties
+@@ -50,3 +50,5 @@ petsAndVisits=Animais e visitas
+ error.404=A página solicitada não foi encontrada.
+ error.500=Ocorreu um erro interno no servidor.
+ error.general=Ocorreu um erro inesperado.
++microchipNumber=Número do microchip
++microchipNumber.invalid=deve ter 15 dígitos
+diff --git a/src/main/resources/messages/messages_ru.properties b/src/main/resources/messages/messages_ru.properties
+index f667057..0d53955 100644
+--- a/src/main/resources/messages/messages_ru.properties
++++ b/src/main/resources/messages/messages_ru.properties
+@@ -50,3 +50,5 @@ petsAndVisits=Питомцы и визиты
+ error.404=Запрашиваемая страница не найдена.
+ error.500=Произошла внутренняя ошибка сервера.
+ error.general=Произошла непредвиденная ошибка.
++microchipNumber=Номер микрочипа
++microchipNumber.invalid=должен содержать 15 цифр
+diff --git a/src/main/resources/messages/messages_tr.properties b/src/main/resources/messages/messages_tr.properties
+index 9b1e9fa..cc5a59c 100644
+--- a/src/main/resources/messages/messages_tr.properties
++++ b/src/main/resources/messages/messages_tr.properties
+@@ -50,3 +50,5 @@ petsAndVisits=Evcil Hayvanlar ve Ziyaretler
+ error.404=İstenen sayfa bulunamadı.
+ error.500=Sunucuda dahili bir hata oluştu.
+ error.general=Beklenmeyen bir hata oluştu.
++microchipNumber=Mikroçip numarası
++microchipNumber.invalid=15 haneli olmalıdır
+diff --git a/src/main/resources/templates/owners/ownerDetails.html b/src/main/resources/templates/owners/ownerDetails.html
+index cc175cd..519c0d8 100644
+--- a/src/main/resources/templates/owners/ownerDetails.html
++++ b/src/main/resources/templates/owners/ownerDetails.html
+@@ -54,6 +54,8 @@
+           <dd th:text="${#temporals.format(pet.birthDate, 'yyyy-MM-dd')}"></dd>
+           <dt th:text="#{type}">Type</dt>
+           <dd th:text="${pet.type}"></dd>
++          <dt th:text="#{microchipNumber}">Microchip number</dt>
++          <dd th:text="${pet.microchipNumber}"></dd>
+         </dl>
+       </td>
+       <td valign="top">
+diff --git a/src/main/resources/templates/pets/createOrUpdatePetForm.html b/src/main/resources/templates/pets/createOrUpdatePetForm.html
+index 396963d..f6a1ef6 100644
+--- a/src/main/resources/templates/pets/createOrUpdatePetForm.html
++++ b/src/main/resources/templates/pets/createOrUpdatePetForm.html
+@@ -19,6 +19,7 @@
+       </div>
+       <input th:replace="~{fragments/inputField :: input ('Name', 'name', 'text')}" />
+       <input th:replace="~{fragments/inputField :: input ('Birth Date', 'birthDate', 'date')}" />
++      <input th:replace="~{fragments/inputField :: input (#{microchipNumber}, 'microchipNumber', 'text')}" />
+       <input th:replace="~{fragments/selectField :: select ('Type', 'type', ${types})}" />
+     </div>
+     <div class="form-group">
+diff --git a/src/test/java/org/springframework/samples/petclinic/MicrochipNumberMigrationScenario.java b/src/test/java/org/springframework/samples/petclinic/MicrochipNumberMigrationScenario.java
+new file mode 100644
+index 0000000..233f599
+--- /dev/null
++++ b/src/test/java/org/springframework/samples/petclinic/MicrochipNumberMigrationScenario.java
+@@ -0,0 +1,119 @@
++/*
++ * Copyright 2012-2025 the original author or authors.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      https://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package org.springframework.samples.petclinic;
++
++import static org.assertj.core.api.Assertions.assertThat;
++import static org.assertj.core.api.Assertions.assertThatThrownBy;
++
++import java.sql.Date;
++
++import javax.sql.DataSource;
++
++import org.springframework.core.io.ClassPathResource;
++import org.springframework.dao.DataIntegrityViolationException;
++import org.springframework.jdbc.core.JdbcTemplate;
++import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
++
++/**
++ * The PC-301 deployment steps, run against an empty MySQL or Postgres database: release
++ * 1's schema and seed data, then the migration script, then release 1 again (what a
++ * rollback redeploys), then release 2's schema and seed data. Release 1's scripts are
++ * kept as test resources under {@code pc-301-release-1/}.
++ */
++class MicrochipNumberMigrationScenario {
++
++	private static final String NUMBER = "985141000123456";
++
++	private final DataSource dataSource;
++
++	private final JdbcTemplate jdbc;
++
++	private final String database;
++
++	private final String currentSchema;
++
++	/**
++	 * @param database {@code mysql} or {@code postgres}
++	 * @param currentSchema the SQL expression for the schema the tables are in
++	 */
++	MicrochipNumberMigrationScenario(DataSource dataSource, String database, String currentSchema) {
++		this.dataSource = dataSource;
++		this.jdbc = new JdbcTemplate(dataSource);
++		this.database = database;
++		this.currentSchema = currentSchema;
++	}
++
++	void run() {
++		// Release 1 on an empty database: the pets table before this change.
++		runReleaseOne();
++		assertThat(hasMicrochipNumberColumn()).as("pets has no microchip_number column before the migration").isFalse();
++		this.jdbc.update("INSERT INTO pets (name, birth_date, type_id, owner_id) VALUES (?, ?, ?, ?)", "Unchipped",
++				Date.valueOf("2020-01-01"), 1, 1);
++		Integer existingPetId = this.jdbc.queryForObject("SELECT id FROM pets WHERE owner_id = 1 AND name = ?",
++				Integer.class, "Unchipped");
++
++		runScript("db/" + this.database + "/migrate-pc-301-microchip-number.sql");
++
++		assertThat(hasMicrochipNumberColumn()).isTrue();
++		assertThat(
++				this.jdbc.queryForObject("SELECT microchip_number FROM pets WHERE id = ?", String.class, existingPetId))
++			.isNull();
++		assertThat(
++				this.jdbc.queryForObject("SELECT COUNT(*) FROM pets WHERE microchip_number IS NOT NULL", Integer.class))
++			.isZero();
++
++		insertPet("NoChipOne", 1, null);
++		insertPet("NoChipTwo", 2, null);
++
++		insertPet("ChipOne", 1, NUMBER);
++		assertThatThrownBy(() -> insertPet("ChipTwo", 2, NUMBER)).isInstanceOf(DataIntegrityViolationException.class)
++			.satisfies(ex -> assertThat(ex.getMessage()).containsIgnoringCase("unique_pet_microchip_number"));
++
++		// Rollback from release 2 redeploys release 1: it must start on the migrated
++		// table.
++		runReleaseOne();
++
++		// Deployment step 3: release 2 starts on the migrated table.
++		runScript("db/" + this.database + "/schema.sql");
++		runScript("db/" + this.database + "/data.sql");
++		assertThat(
++				this.jdbc.queryForObject("SELECT COUNT(*) FROM pets WHERE microchip_number = ?", Integer.class, NUMBER))
++			.isEqualTo(1);
++	}
++
++	private void runReleaseOne() {
++		runScript("pc-301-release-1/" + this.database + "/schema.sql");
++		runScript("pc-301-release-1/" + this.database + "/data.sql");
++	}
++
++	private void runScript(String path) {
++		new ResourceDatabasePopulator(new ClassPathResource(path)).execute(this.dataSource);
++	}
++
++	private boolean hasMicrochipNumberColumn() {
++		Integer count = this.jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = "
++				+ this.currentSchema + " AND table_name = 'pets' AND column_name = 'microchip_number'", Integer.class);
++		return count != null && count > 0;
++	}
++
++	private void insertPet(String name, int ownerId, String microchipNumber) {
++		this.jdbc.update(
++				"INSERT INTO pets (name, birth_date, type_id, owner_id, microchip_number) VALUES (?, ?, ?, ?, ?)", name,
++				Date.valueOf("2020-01-01"), 1, ownerId, microchipNumber);
++	}
++
++}
+diff --git a/src/test/java/org/springframework/samples/petclinic/MySqlMicrochipNumberMigrationTests.java b/src/test/java/org/springframework/samples/petclinic/MySqlMicrochipNumberMigrationTests.java
+new file mode 100644
+index 0000000..998896d
+--- /dev/null
++++ b/src/test/java/org/springframework/samples/petclinic/MySqlMicrochipNumberMigrationTests.java
+@@ -0,0 +1,48 @@
++/*
++ * Copyright 2012-2025 the original author or authors.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      https://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package org.springframework.samples.petclinic;
++
++import org.junit.jupiter.api.Test;
++import org.junit.jupiter.api.condition.DisabledInNativeImage;
++import org.springframework.jdbc.datasource.DriverManagerDataSource;
++import org.springframework.test.context.aot.DisabledInAotMode;
++import org.testcontainers.junit.jupiter.Container;
++import org.testcontainers.junit.jupiter.Testcontainers;
++import org.testcontainers.mysql.MySQLContainer;
++import org.testcontainers.utility.DockerImageName;
++
++/**
++ * Runs the PC-301 migration script against a MySQL database that holds release 1's
++ * schema. Plain JDBC, no Spring context, so nothing creates the new schema before the old
++ * one. Skipped without Docker.
++ */
++@Testcontainers(disabledWithoutDocker = true)
++@DisabledInNativeImage
++@DisabledInAotMode
++class MySqlMicrochipNumberMigrationTests {
++
++	@Container
++	static MySQLContainer container = new MySQLContainer(DockerImageName.parse("mysql:9.7"));
++
++	@Test
++	void migrationAddsMicrochipNumberToReleaseOneTable() {
++		DriverManagerDataSource dataSource = new DriverManagerDataSource(container.getJdbcUrl(),
++				container.getUsername(), container.getPassword());
++		new MicrochipNumberMigrationScenario(dataSource, "mysql", "DATABASE()").run();
++	}
++
++}
+diff --git a/src/test/java/org/springframework/samples/petclinic/PetClinicConcurrencyTests.java b/src/test/java/org/springframework/samples/petclinic/PetClinicConcurrencyTests.java
+index 6ca9f09..8078729 100644
+--- a/src/test/java/org/springframework/samples/petclinic/PetClinicConcurrencyTests.java
++++ b/src/test/java/org/springframework/samples/petclinic/PetClinicConcurrencyTests.java
+@@ -2,7 +2,9 @@ package org.springframework.samples.petclinic;
+ 
+ import static org.assertj.core.api.Assertions.assertThat;
+ 
++import java.util.List;
+ import java.util.Optional;
++import java.util.concurrent.CopyOnWriteArrayList;
+ import java.util.concurrent.CountDownLatch;
+ import java.util.concurrent.ExecutorService;
+ import java.util.concurrent.Executors;
+@@ -131,4 +133,106 @@ public class PetClinicConcurrencyTests {
+ 		assertThat(countWithDuplicateName).isEqualTo(1);
+ 	}
+ 
++	@Test
++	public void testDuplicateMicrochipNumberRaceConditionShowsFormAgain() throws Exception {
++		int[] ownerIds = { 4, 5 };
++		String microchipNumber = "985141000777777";
++
++		assertThat(countPetsWithMicrochipNumber(microchipNumber)).isZero();
++
++		RestTemplate template = restTemplateBuilder.baseUri("http://localhost:" + port).build();
++
++		int threadCount = ownerIds.length;
++		ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
++		CountDownLatch readyLatch = new CountDownLatch(threadCount);
++		CountDownLatch startLatch = new CountDownLatch(1);
++		CountDownLatch doneLatch = new CountDownLatch(threadCount);
++
++		List<ResponseEntity<String>> responses = new CopyOnWriteArrayList<>();
++		List<Exception> exceptions = new CopyOnWriteArrayList<>();
++
++		for (int ownerId : ownerIds) {
++			executorService.submit(() -> {
++				readyLatch.countDown();
++				try {
++					startLatch.await();
++
++					HttpHeaders headers = new HttpHeaders();
++					headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
++
++					MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
++					map.add("name", "RaceChip" + ownerId);
++					map.add("birthDate", "2020-01-01");
++					map.add("type", "cat");
++					map.add("microchipNumber", microchipNumber);
++
++					responses.add(template.postForEntity("/owners/" + ownerId + "/pets/new",
++							new HttpEntity<>(map, headers), String.class));
++				}
++				catch (Exception e) {
++					exceptions.add(e);
++				}
++				finally {
++					doneLatch.countDown();
++				}
++			});
++		}
++
++		try {
++			assertThat(readyLatch.await(10, TimeUnit.SECONDS)).isTrue();
++			startLatch.countDown();
++			assertThat(doneLatch.await(10, TimeUnit.SECONDS)).isTrue();
++		}
++		finally {
++			executorService.shutdown();
++		}
++
++		assertThat(exceptions).isEmpty();
++		assertThat(responses).hasSize(2);
++
++		// The loser gets the form again (200) with the duplicate error on the microchip
++		// number, whichever of the validator or the database caught it.
++		List<ResponseEntity<String>> rejected = responses.stream()
++			.filter(r -> r.getStatusCode().value() == 200 && hasDuplicateErrorOnMicrochipNumber(r.getBody()))
++			.toList();
++		assertThat(rejected).hasSize(1);
++
++		ResponseEntity<String> winner = responses.stream().filter(r -> !rejected.contains(r)).findFirst().orElseThrow();
++		assertThat(winner.getStatusCode().is2xxSuccessful() || winner.getStatusCode().is3xxRedirection()).isTrue();
++		assertThat(winner.getBody() == null || !winner.getBody().contains("is already in use")).isTrue();
++
++		assertThat(countPetsWithMicrochipNumber(microchipNumber)).isEqualTo(1);
++		long racePets = 0;
++		for (int ownerId : ownerIds) {
++			racePets += ownerRepository.findById(ownerId)
++				.orElseThrow()
++				.getPets()
++				.stream()
++				.filter(p -> p.getName().startsWith("RaceChip"))
++				.count();
++		}
++		assertThat(racePets).isEqualTo(1);
++	}
++
++	private long countPetsWithMicrochipNumber(String microchipNumber) {
++		return ownerRepository.findAll()
++			.stream()
++			.flatMap(o -> o.getPets().stream())
++			.filter(p -> microchipNumber.equals(p.getMicrochipNumber()))
++			.count();
++	}
++
++	/**
++	 * The microchip number field comes after the name and birth date fields on the form,
++	 * so its error is the only "is already in use" after the microchip number input.
++	 */
++	private static boolean hasDuplicateErrorOnMicrochipNumber(String body) {
++		if (body == null) {
++			return false;
++		}
++		int field = body.indexOf("id=\"microchipNumber\"");
++		return field >= 0 && !body.substring(0, field).contains("is already in use")
++				&& body.substring(field).contains("is already in use");
++	}
++
+ }
+diff --git a/src/test/java/org/springframework/samples/petclinic/PetMicrochipNumberIntegrationTests.java b/src/test/java/org/springframework/samples/petclinic/PetMicrochipNumberIntegrationTests.java
+new file mode 100644
+index 0000000..283324e
+--- /dev/null
++++ b/src/test/java/org/springframework/samples/petclinic/PetMicrochipNumberIntegrationTests.java
+@@ -0,0 +1,89 @@
++/*
++ * Copyright 2012-2025 the original author or authors.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      https://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package org.springframework.samples.petclinic;
++
++import static org.assertj.core.api.Assertions.assertThat;
++import static org.hamcrest.Matchers.containsString;
++import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
++import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
++import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
++import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
++
++import org.junit.jupiter.api.Test;
++import org.springframework.beans.factory.annotation.Autowired;
++import org.springframework.boot.test.context.SpringBootTest;
++import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
++import org.springframework.jdbc.core.JdbcTemplate;
++import org.springframework.test.web.servlet.MockMvc;
++import org.springframework.test.web.servlet.ResultActions;
++
++/**
++ * Adds, edits and clears a pet's microchip number through the forms on H2, and reads the
++ * stored value from the database after each step. The test runs no transaction of its
++ * own, so each request saves as it does in the running app, with a detached pet
++ * ({@code spring.jpa.open-in-view=false}).
++ */
++@SpringBootTest
++@AutoConfigureMockMvc
++class PetMicrochipNumberIntegrationTests {
++
++	private static final int OWNER_ID = 3;
++
++	private static final String FORM = "pets/createOrUpdatePetForm";
++
++	@Autowired
++	private MockMvc mockMvc;
++
++	@Autowired
++	private JdbcTemplate jdbc;
++
++	@Test
++	void microchipNumberIsAddedReplacedAndClearedThroughTheForms() throws Exception {
++		this.mockMvc
++			.perform(post("/owners/{ownerId}/pets/new", OWNER_ID).param("name", "Chippy")
++				.param("type", "dog")
++				.param("birthDate", "2020-01-01")
++				.param("microchipNumber", "985141000123456"))
++			.andExpect(status().is3xxRedirection());
++		Integer petId = this.jdbc.queryForObject("SELECT id FROM pets WHERE owner_id = ? AND name = ?", Integer.class,
++				OWNER_ID, "Chippy");
++		assertThat(storedMicrochipNumber(petId)).isEqualTo("985141000123456");
++
++		edit(petId, "12345").andExpect(status().isOk())
++			.andExpect(view().name(FORM))
++			.andExpect(content().string(containsString("must be 15 digits")));
++		assertThat(storedMicrochipNumber(petId)).isEqualTo("985141000123456");
++
++		edit(petId, "985141000654321").andExpect(status().is3xxRedirection());
++		assertThat(storedMicrochipNumber(petId)).isEqualTo("985141000654321");
++
++		edit(petId, "").andExpect(status().is3xxRedirection());
++		assertThat(storedMicrochipNumber(petId)).isNull();
++	}
++
++	private ResultActions edit(int petId, String microchipNumber) throws Exception {
++		return this.mockMvc.perform(post("/owners/{ownerId}/pets/{petId}/edit", OWNER_ID, petId).param("name", "Chippy")
++			.param("type", "dog")
++			.param("birthDate", "2020-01-01")
++			.param("microchipNumber", microchipNumber));
++	}
++
++	private String storedMicrochipNumber(int petId) {
++		return this.jdbc.queryForObject("SELECT microchip_number FROM pets WHERE id = ?", String.class, petId);
++	}
++
++}
+diff --git a/src/test/java/org/springframework/samples/petclinic/PostgresMicrochipNumberMigrationTests.java b/src/test/java/org/springframework/samples/petclinic/PostgresMicrochipNumberMigrationTests.java
+new file mode 100644
+index 0000000..d5b48bf
+--- /dev/null
++++ b/src/test/java/org/springframework/samples/petclinic/PostgresMicrochipNumberMigrationTests.java
+@@ -0,0 +1,59 @@
++/*
++ * Copyright 2012-2025 the original author or authors.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      https://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package org.springframework.samples.petclinic;
++
++import static org.junit.jupiter.api.Assumptions.assumeTrue;
++
++import javax.sql.DataSource;
++
++import org.junit.jupiter.api.BeforeAll;
++import org.junit.jupiter.api.Test;
++import org.junit.jupiter.api.condition.DisabledInNativeImage;
++import org.springframework.beans.factory.annotation.Autowired;
++import org.springframework.boot.test.context.SpringBootTest;
++import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
++import org.springframework.test.context.ActiveProfiles;
++import org.testcontainers.DockerClientFactory;
++
++/**
++ * Runs the PC-301 migration script against a Postgres database that holds release 1's
++ * schema. Postgres is started through Spring Boot's Docker Compose support, as in
++ * {@link PostgresIntegrationTests}, with a fresh container and {@code spring.sql.init}
++ * turned off, so nothing creates the new schema before the old one. Skipped without
++ * Docker.
++ */
++@SpringBootTest(webEnvironment = WebEnvironment.NONE, properties = { "spring.docker.compose.skip.in-tests=false", //
++		"spring.docker.compose.start.arguments=--force-recreate,--renew-anon-volumes,postgres", //
++		"spring.sql.init.mode=never" })
++@ActiveProfiles("postgres")
++@DisabledInNativeImage
++class PostgresMicrochipNumberMigrationTests {
++
++	@Autowired
++	private DataSource dataSource;
++
++	@BeforeAll
++	static void available() {
++		assumeTrue(DockerClientFactory.instance().isDockerAvailable(), "Docker not available");
++	}
++
++	@Test
++	void migrationAddsMicrochipNumberToReleaseOneTable() {
++		new MicrochipNumberMigrationScenario(this.dataSource, "postgres", "current_schema()").run();
++	}
++
++}
+diff --git a/src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java b/src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java
+index c8ce4f5..e7c8748 100644
+--- a/src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java
++++ b/src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java
+@@ -33,6 +33,7 @@ import java.time.LocalDate;
+ import java.util.List;
+ import java.util.Optional;
+ 
++import static org.assertj.core.api.Assertions.assertThat;
+ import static org.hamcrest.Matchers.empty;
+ import static org.hamcrest.Matchers.greaterThan;
+ import static org.hamcrest.Matchers.hasItem;
+@@ -295,6 +296,33 @@ class OwnerControllerTests {
+ 			.andExpect(view().name("owners/ownerDetails"));
+ 	}
+ 
++	@Test
++	void showOwnerShowsPetsMicrochipNumber() throws Exception {
++		Owner george = george();
++		george.getPet("Max").setMicrochipNumber("985141000123456");
++		given(this.owners.findById(TEST_OWNER_ID)).willReturn(Optional.of(george));
++
++		String body = mockMvc.perform(get("/owners/{ownerId}", TEST_OWNER_ID))
++			.andExpect(status().isOk())
++			.andReturn()
++			.getResponse()
++			.getContentAsString();
++
++		assertThat(body).containsPattern("<dt>Microchip number</dt>\\s*<dd>985141000123456</dd>");
++	}
++
++	@Test
++	void showOwnerShowsEmptyMicrochipNumberForPetWithoutOne() throws Exception {
++		String body = mockMvc.perform(get("/owners/{ownerId}", TEST_OWNER_ID))
++			.andExpect(status().isOk())
++			.andReturn()
++			.getResponse()
++			.getContentAsString();
++
++		assertThat(body).containsPattern("<dt>Microchip number</dt>\\s*<dd></dd>");
++		assertThat(body).doesNotContainPattern("<dt>Microchip number</dt>\\s*<dd>none</dd>");
++	}
++
+ 	@Test
+ 	void processUpdateOwnerFormWithIdMismatch() throws Exception {
+ 		int pathOwnerId = 1;
+diff --git a/src/test/java/org/springframework/samples/petclinic/owner/PetControllerCharacterizationTests.java b/src/test/java/org/springframework/samples/petclinic/owner/PetControllerCharacterizationTests.java
+index e7e7126..b8b4e17 100644
+--- a/src/test/java/org/springframework/samples/petclinic/owner/PetControllerCharacterizationTests.java
++++ b/src/test/java/org/springframework/samples/petclinic/owner/PetControllerCharacterizationTests.java
+@@ -76,6 +76,9 @@ class PetControllerCharacterizationTests {
+ 	@MockitoBean
+ 	private PetTypeRepository types;
+ 
++	@MockitoBean
++	private PetRepository pets;
++
+ 	private Owner owner;
+ 
+ 	private Pet petty;
+diff --git a/src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java b/src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java
+index dc80491..0ab839c 100644
+--- a/src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java
++++ b/src/test/java/org/springframework/samples/petclinic/owner/PetControllerTests.java
+@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Nested;
+ import org.junit.jupiter.api.Test;
+ import org.junit.jupiter.api.condition.DisabledInNativeImage;
++import org.mockito.ArgumentCaptor;
+ import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+ import org.springframework.context.annotation.ComponentScan;
+@@ -34,10 +35,19 @@ import java.util.Optional;
+ 
+ import org.springframework.dao.DataIntegrityViolationException;
+ 
++import static org.assertj.core.api.Assertions.assertThat;
++import static org.hamcrest.Matchers.containsString;
++import static org.hamcrest.Matchers.not;
+ import static org.mockito.ArgumentMatchers.any;
++import static org.mockito.ArgumentMatchers.anyString;
+ import static org.mockito.BDDMockito.given;
++import static org.mockito.Mockito.never;
++import static org.mockito.Mockito.verify;
++import static org.mockito.Mockito.verifyNoInteractions;
+ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
++import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
++import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
+ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+@@ -67,6 +77,9 @@ class PetControllerTests {
+ 	@MockitoBean
+ 	private PetTypeRepository types;
+ 
++	@MockitoBean
++	private PetRepository pets;
++
+ 	@BeforeEach
+ 	void setup() {
+ 		PetType cat = new PetType();
+@@ -287,4 +300,315 @@ class PetControllerTests {
+ 
+ 	}
+ 
++	@Nested
++	class MicrochipNumber {
++
++		private static final String NUMBER = "985141000123456";
++
++		/**
++		 * Every load of the owner returns new instances, so the bound pet and the owner's
++		 * pet differ, as they do with a real repository. A value only reaches the saved
++		 * owner if {@code updatePetDetails} copies it.
++		 */
++		private void ownerLoadsFreshPettyWithMicrochipNumber(String microchipNumber) {
++			given(owners.findById(TEST_OWNER_ID)).willAnswer(invocation -> {
++				Owner fresh = new Owner();
++				Pet freshPetty = new Pet();
++				freshPetty.setId(TEST_PET_ID);
++				freshPetty.setName("petty");
++				freshPetty.setBirthDate(LocalDate.of(2010, 1, 1));
++				freshPetty.setMicrochipNumber(microchipNumber);
++				fresh.addPet(freshPetty);
++				return Optional.of(fresh);
++			});
++		}
++
++		private Owner savedOwner() {
++			ArgumentCaptor<Owner> saved = ArgumentCaptor.forClass(Owner.class);
++			verify(owners).saveAndFlush(saved.capture());
++			return saved.getValue();
++		}
++
++		// ---- add form ----
++
++		@Test
++		void addWithoutMicrochipNumberSavesNoneAndDoesNotQuery() throws Exception {
++			mockMvc
++				.perform(post("/owners/{ownerId}/pets/new", TEST_OWNER_ID).param("name", "Betty")
++					.param("type", "hamster")
++					.param("birthDate", "2015-02-12")
++					.param("microchipNumber", ""))
++				.andExpect(status().is3xxRedirection())
++				.andExpect(view().name("redirect:/owners/{ownerId}"))
++				.andExpect(flash().attribute("message", "New Pet has been Added"));
++
++			assertThat(savedOwner().getPet("Betty").getMicrochipNumber()).isNull();
++			verifyNoInteractions(pets);
++		}
++
++		@Test
++		void addWithBlankMicrochipNumberSavesNone() throws Exception {
++			mockMvc
++				.perform(post("/owners/{ownerId}/pets/new", TEST_OWNER_ID).param("name", "Betty")
++					.param("type", "hamster")
++					.param("birthDate", "2015-02-12")
++					.param("microchipNumber", "   "))
++				.andExpect(status().is3xxRedirection());
++
++			assertThat(savedOwner().getPet("Betty").getMicrochipNumber()).isNull();
++		}
++
++		@Test
++		void addRemovesSpacesFromMicrochipNumber() throws Exception {
++			mockMvc
++				.perform(post("/owners/{ownerId}/pets/new", TEST_OWNER_ID).param("name", "Betty")
++					.param("type", "hamster")
++					.param("birthDate", "2015-02-12")
++					.param("microchipNumber", " 985 141 000 123 456 "))
++				.andExpect(status().is3xxRedirection());
++
++			assertThat(savedOwner().getPet("Betty").getMicrochipNumber()).isEqualTo(NUMBER);
++			verify(pets).existsByMicrochipNumber(NUMBER);
++		}
++
++		@Test
++		void addAcceptsFifteenDigits() throws Exception {
++			mockMvc
++				.perform(post("/owners/{ownerId}/pets/new", TEST_OWNER_ID).param("name", "Betty")
++					.param("type", "hamster")
++					.param("birthDate", "2015-02-12")
++					.param("microchipNumber", NUMBER))
++				.andExpect(status().is3xxRedirection());
++
++			assertThat(savedOwner().getPet("Betty").getMicrochipNumber()).isEqualTo(NUMBER);
++		}
++
++		@Test
++		void addWithDashedNumberIsRejectedAndNotSaved() throws Exception {
++			mockMvc
++				.perform(post("/owners/{ownerId}/pets/new", TEST_OWNER_ID).param("name", "Betty")
++					.param("type", "hamster")
++					.param("birthDate", "2015-02-12")
++					.param("microchipNumber", "985-141-000-123-456"))
++				.andExpect(status().isOk())
++				.andExpect(view().name("pets/createOrUpdatePetForm"))
++				.andExpect(model().errorCount(1))
++				.andExpect(model().attributeHasFieldErrorCode("pet", "microchipNumber", "microchipNumber.invalid"))
++				.andExpect(content().string(containsString("must be 15 digits")));
++
++			verify(owners, never()).saveAndFlush(any());
++		}
++
++		@Test
++		void addWithNumberOfAnotherOwnersPetShowsOnlyIsAlreadyInUse() throws Exception {
++			given(pets.existsByMicrochipNumber(NUMBER)).willReturn(true);
++
++			mockMvc
++				.perform(post("/owners/{ownerId}/pets/new", TEST_OWNER_ID).param("name", "Betty")
++					.param("type", "hamster")
++					.param("birthDate", "2015-02-12")
++					.param("microchipNumber", " 985141000123456"))
++				.andExpect(status().isOk())
++				.andExpect(view().name("pets/createOrUpdatePetForm"))
++				.andExpect(model().errorCount(1))
++				.andExpect(model().attributeHasFieldErrorCode("pet", "microchipNumber", "duplicate"))
++				.andExpect(content().string(containsString("is already in use")))
++				// "Leo" of George Franklin holds the number in the seed-like scenario;
++				// the
++				// page must not name either of them.
++				.andExpect(content().string(not(containsString("Leo"))))
++				.andExpect(content().string(not(containsString("Franklin"))));
++
++			verify(owners, never()).saveAndFlush(any());
++		}
++
++		@Test
++		void addReportsThreeErrorsOneOnMicrochipNumber() throws Exception {
++			mockMvc
++				.perform(post("/owners/{ownerId}/pets/new", TEST_OWNER_ID).param("name", "petty")
++					.param("type", "hamster")
++					.param("birthDate", LocalDate.now().plusDays(1).toString())
++					.param("microchipNumber", "123"))
++				.andExpect(status().isOk())
++				.andExpect(model().errorCount(3))
++				.andExpect(model().attributeHasFieldErrorCode("pet", "name", "duplicate"))
++				.andExpect(model().attributeHasFieldErrorCode("pet", "birthDate", "typeMismatch.birthDate"))
++				.andExpect(model().attributeHasFieldErrorCode("pet", "microchipNumber", "microchipNumber.invalid"))
++				.andExpect(content().string(containsString("is already in use")))
++				.andExpect(content().string(containsString("invalid date")))
++				.andExpect(content().string(containsString("must be 15 digits")));
++
++			verify(owners, never()).saveAndFlush(any());
++			verifyNoInteractions(pets);
++		}
++
++		// ---- edit form ----
++
++		@Test
++		void editFormShowsStoredMicrochipNumber() throws Exception {
++			ownerLoadsFreshPettyWithMicrochipNumber(NUMBER);
++
++			mockMvc.perform(get("/owners/{ownerId}/pets/{petId}/edit", TEST_OWNER_ID, TEST_PET_ID))
++				.andExpect(status().isOk())
++				.andExpect(content().string(containsString("Microchip number")))
++				.andExpect(content().string(
++						containsString("id=\"microchipNumber\" name=\"microchipNumber\" value=\"" + NUMBER + "\"")));
++		}
++
++		@Test
++		void editFormForPetWithoutNumberShowsEmptyField() throws Exception {
++			ownerLoadsFreshPettyWithMicrochipNumber(null);
++
++			mockMvc.perform(get("/owners/{ownerId}/pets/{petId}/edit", TEST_OWNER_ID, TEST_PET_ID))
++				.andExpect(status().isOk())
++				.andExpect(content().string(containsString("Microchip number")))
++				.andExpect(
++						content().string(containsString("id=\"microchipNumber\" name=\"microchipNumber\" value=\"\"")));
++		}
++
++		@Test
++		void editReplacesStoredNumberOnOwnersPet() throws Exception {
++			ownerLoadsFreshPettyWithMicrochipNumber(NUMBER);
++
++			mockMvc
++				.perform(post("/owners/{ownerId}/pets/{petId}/edit", TEST_OWNER_ID, TEST_PET_ID).param("name", "petty")
++					.param("birthDate", "2015-02-12")
++					.param("microchipNumber", "985141000654321"))
++				.andExpect(status().is3xxRedirection());
++
++			assertThat(savedOwner().getPet(TEST_PET_ID).getMicrochipNumber()).isEqualTo("985141000654321");
++		}
++
++		@Test
++		void editWithEmptyFieldRemovesStoredNumberFromOwnersPet() throws Exception {
++			ownerLoadsFreshPettyWithMicrochipNumber(NUMBER);
++
++			mockMvc
++				.perform(post("/owners/{ownerId}/pets/{petId}/edit", TEST_OWNER_ID, TEST_PET_ID).param("name", "petty")
++					.param("birthDate", "2015-02-12")
++					.param("microchipNumber", ""))
++				.andExpect(status().is3xxRedirection());
++
++			assertThat(savedOwner().getPet(TEST_PET_ID).getMicrochipNumber()).isNull();
++		}
++
++		@Test
++		void editSavingPetWithItsOwnNumberIsAccepted() throws Exception {
++			ownerLoadsFreshPettyWithMicrochipNumber(NUMBER);
++			// The number exists (on petty itself): only the query that excludes the pet
++			// lets the edit through.
++			given(pets.existsByMicrochipNumber(anyString())).willReturn(true);
++			given(pets.existsByMicrochipNumberAndIdNot(NUMBER, TEST_PET_ID)).willReturn(false);
++
++			mockMvc
++				.perform(post("/owners/{ownerId}/pets/{petId}/edit", TEST_OWNER_ID, TEST_PET_ID).param("name", "petty")
++					.param("birthDate", "2015-02-12")
++					.param("microchipNumber", "985 141 000 123 456"))
++				.andExpect(status().is3xxRedirection());
++
++			assertThat(savedOwner().getPet(TEST_PET_ID).getMicrochipNumber()).isEqualTo(NUMBER);
++			verify(pets).existsByMicrochipNumberAndIdNot(NUMBER, TEST_PET_ID);
++		}
++
++		@Test
++		void editToAnotherPetsNumberIsRejected() throws Exception {
++			// petty holds the number; doggy is edited to it.
++			given(pets.existsByMicrochipNumberAndIdNot(NUMBER, TEST_PET_ID + 1)).willReturn(true);
++
++			mockMvc
++				.perform(post("/owners/{ownerId}/pets/{petId}/edit", TEST_OWNER_ID, TEST_PET_ID + 1)
++					.param("name", "doggy")
++					.param("birthDate", "2015-02-12")
++					.param("microchipNumber", "985 141 000 123 456"))
++				.andExpect(status().isOk())
++				.andExpect(view().name("pets/createOrUpdatePetForm"))
++				.andExpect(model().errorCount(1))
++				.andExpect(model().attributeHasFieldErrorCode("pet", "microchipNumber", "duplicate"))
++				.andExpect(content().string(containsString("is already in use")));
++
++			verify(owners, never()).saveAndFlush(any());
++		}
++
++		@Test
++		void editReportsTwoErrorsOneOnMicrochipNumber() throws Exception {
++			given(pets.existsByMicrochipNumberAndIdNot(NUMBER, TEST_PET_ID)).willReturn(true);
++
++			mockMvc
++				.perform(post("/owners/{ownerId}/pets/{petId}/edit", TEST_OWNER_ID, TEST_PET_ID).param("name", "petty")
++					.param("birthDate", "")
++					.param("microchipNumber", NUMBER))
++				.andExpect(status().isOk())
++				.andExpect(model().errorCount(2))
++				.andExpect(model().attributeHasFieldErrorCode("pet", "birthDate", "required"))
++				.andExpect(model().attributeHasFieldErrorCode("pet", "microchipNumber", "duplicate"))
++				.andExpect(content().string(containsString("is required")))
++				.andExpect(content().string(containsString("is already in use")));
++
++			verify(owners, never()).saveAndFlush(any());
++		}
++
++		// ---- duplicates caught by the database ----
++
++		@Test
++		void createMicrochipConstraintIsReportedOnMicrochipNumber() throws Exception {
++			given(owners.saveAndFlush(any(Owner.class))).willThrow(new DataIntegrityViolationException(
++					"Unique index or primary key violation: \"PUBLIC.UNIQUE_PET_MICROCHIP_NUMBER\""));
++
++			mockMvc
++				.perform(post("/owners/{ownerId}/pets/new", TEST_OWNER_ID).param("name", "Betty")
++					.param("type", "hamster")
++					.param("birthDate", "2015-02-12")
++					.param("microchipNumber", NUMBER))
++				.andExpect(status().isOk())
++				.andExpect(view().name("pets/createOrUpdatePetForm"))
++				.andExpect(model().errorCount(1))
++				.andExpect(model().attributeHasFieldErrorCode("pet", "microchipNumber", "duplicate"));
++		}
++
++		@Test
++		void editMicrochipConstraintIsReportedOnMicrochipNumber() throws Exception {
++			given(owners.saveAndFlush(any(Owner.class)))
++				.willThrow(new DataIntegrityViolationException("duplicate key: unique_pet_microchip_number"));
++
++			mockMvc
++				.perform(post("/owners/{ownerId}/pets/{petId}/edit", TEST_OWNER_ID, TEST_PET_ID).param("name", "petty")
++					.param("birthDate", "2015-02-12")
++					.param("microchipNumber", NUMBER))
++				.andExpect(status().isOk())
++				.andExpect(view().name("pets/createOrUpdatePetForm"))
++				.andExpect(model().errorCount(1))
++				.andExpect(model().attributeHasFieldErrorCode("pet", "microchipNumber", "duplicate"));
++		}
++
++		@Test
++		void createNameConstraintIsStillReportedOnNameOnly() throws Exception {
++			given(owners.saveAndFlush(any(Owner.class)))
++				.willThrow(new DataIntegrityViolationException("Duplicate key: unique_owner_pet_name"));
++
++			mockMvc
++				.perform(post("/owners/{ownerId}/pets/new", TEST_OWNER_ID).param("name", "Betty")
++					.param("type", "hamster")
++					.param("birthDate", "2015-02-12")
++					.param("microchipNumber", NUMBER))
++				.andExpect(status().isOk())
++				.andExpect(model().errorCount(1))
++				.andExpect(model().attributeHasFieldErrorCode("pet", "name", "duplicate"));
++		}
++
++		@Test
++		void editNameConstraintIsStillReportedOnNameOnly() throws Exception {
++			given(owners.saveAndFlush(any(Owner.class)))
++				.willThrow(new DataIntegrityViolationException("Duplicate key: unique_owner_pet_name"));
++
++			mockMvc
++				.perform(post("/owners/{ownerId}/pets/{petId}/edit", TEST_OWNER_ID, TEST_PET_ID).param("name", "petty")
++					.param("birthDate", "2015-02-12")
++					.param("microchipNumber", NUMBER))
++				.andExpect(status().isOk())
++				.andExpect(model().errorCount(1))
++				.andExpect(model().attributeHasFieldErrorCode("pet", "name", "duplicate"));
++		}
++
++	}
++
+ }
+diff --git a/src/test/java/org/springframework/samples/petclinic/owner/PetTests.java b/src/test/java/org/springframework/samples/petclinic/owner/PetTests.java
+new file mode 100644
+index 0000000..52bb988
+--- /dev/null
++++ b/src/test/java/org/springframework/samples/petclinic/owner/PetTests.java
+@@ -0,0 +1,59 @@
++/*
++ * Copyright 2012-2025 the original author or authors.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      https://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.springframework.samples.petclinic.owner;
++
++import org.junit.jupiter.api.Test;
++
++import static org.assertj.core.api.Assertions.assertThat;
++
++class PetTests {
++
++	@Test
++	void microchipNumberIsTrimmedAndItsSpacesRemoved() {
++		Pet pet = new Pet();
++		pet.setMicrochipNumber(" 985 141 000 123 456 ");
++		assertThat(pet.getMicrochipNumber()).isEqualTo("985141000123456");
++	}
++
++	@Test
++	void blankMicrochipNumberBecomesNone() {
++		Pet pet = new Pet();
++		pet.setMicrochipNumber("   ");
++		assertThat(pet.getMicrochipNumber()).isNull();
++	}
++
++	@Test
++	void emptyMicrochipNumberBecomesNone() {
++		Pet pet = new Pet();
++		pet.setMicrochipNumber("");
++		assertThat(pet.getMicrochipNumber()).isNull();
++	}
++
++	@Test
++	void nullMicrochipNumberStaysNone() {
++		Pet pet = new Pet();
++		pet.setMicrochipNumber(null);
++		assertThat(pet.getMicrochipNumber()).isNull();
++	}
++
++	@Test
++	void dashesInMicrochipNumberAreKept() {
++		Pet pet = new Pet();
++		pet.setMicrochipNumber("985-141-000-123-456");
++		assertThat(pet.getMicrochipNumber()).isEqualTo("985-141-000-123-456");
++	}
++
++}
+diff --git a/src/test/java/org/springframework/samples/petclinic/owner/PetValidatorTests.java b/src/test/java/org/springframework/samples/petclinic/owner/PetValidatorTests.java
+index 43fbad2..e82bfc4 100644
+--- a/src/test/java/org/springframework/samples/petclinic/owner/PetValidatorTests.java
++++ b/src/test/java/org/springframework/samples/petclinic/owner/PetValidatorTests.java
+@@ -21,15 +21,22 @@ import org.junit.jupiter.api.Nested;
+ import org.junit.jupiter.api.Test;
+ import org.junit.jupiter.api.condition.DisabledInNativeImage;
+ import org.junit.jupiter.api.extension.ExtendWith;
++import org.mockito.Mock;
+ import org.mockito.junit.jupiter.MockitoExtension;
+ import org.springframework.validation.Errors;
++import org.springframework.validation.FieldError;
+ import org.springframework.validation.MapBindingResult;
+ 
+ import java.time.LocalDate;
+ import java.util.HashMap;
+ 
++import static org.assertj.core.api.Assertions.assertThat;
+ import static org.junit.jupiter.api.Assertions.assertFalse;
+ import static org.junit.jupiter.api.Assertions.assertTrue;
++import static org.mockito.BDDMockito.given;
++import static org.mockito.Mockito.never;
++import static org.mockito.Mockito.verify;
++import static org.mockito.Mockito.verifyNoInteractions;
+ 
+ /**
+  * Test class for {@link PetValidator}
+@@ -42,6 +49,9 @@ class PetValidatorTests {
+ 
+ 	private PetValidator petValidator;
+ 
++	@Mock
++	private PetRepository pets;
++
+ 	private Pet pet;
+ 
+ 	private PetType petType;
+@@ -56,7 +66,7 @@ class PetValidatorTests {
+ 
+ 	@BeforeEach
+ 	void setUp() {
+-		petValidator = new PetValidator();
++		petValidator = new PetValidator(pets);
+ 		pet = new Pet();
+ 		petType = new PetType();
+ 		errors = new MapBindingResult(new HashMap<>(), "pet");
+@@ -136,4 +146,151 @@ class PetValidatorTests {
+ 
+ 	}
+ 
++	@Nested
++	class MicrochipNumber {
++
++		@BeforeEach
++		void validPet() {
++			petType.setName(petTypeName);
++			pet.setName(petName);
++			pet.setType(petType);
++			pet.setBirthDate(petBirthDate);
++		}
++
++		private void assertOnlyMicrochipNumberError(String code) {
++			assertThat(errors.getErrorCount()).isEqualTo(1);
++			assertThat(errors.getFieldErrors("microchipNumber")).extracting(FieldError::getCode).containsExactly(code);
++		}
++
++		@Test
++		void noMicrochipNumberIsAcceptedWithoutQuery() {
++			pet.setMicrochipNumber(null);
++
++			petValidator.validate(pet, errors);
++
++			assertFalse(errors.hasErrors());
++			verifyNoInteractions(pets);
++		}
++
++		@Test
++		void noMicrochipNumberOnExistingPetIsAcceptedWithoutQuery() {
++			pet.setId(7);
++			pet.setMicrochipNumber("");
++
++			petValidator.validate(pet, errors);
++
++			assertFalse(errors.hasErrors());
++			verifyNoInteractions(pets);
++		}
++
++		@Test
++		void fifteenDigitsAreAccepted() {
++			pet.setMicrochipNumber("985141000123456");
++
++			petValidator.validate(pet, errors);
++
++			assertFalse(errors.hasErrors());
++			verify(pets).existsByMicrochipNumber("985141000123456");
++		}
++
++		@Test
++		void anyFirstThreeDigitsAreAccepted() {
++			pet.setMicrochipNumber("000000000000001");
++
++			petValidator.validate(pet, errors);
++
++			assertFalse(errors.hasErrors());
++		}
++
++		@Test
++		void fourteenDigitsAreRejected() {
++			pet.setMicrochipNumber("98514100012345");
++
++			petValidator.validate(pet, errors);
++
++			assertOnlyMicrochipNumberError("microchipNumber.invalid");
++		}
++
++		@Test
++		void sixteenDigitsAreRejected() {
++			pet.setMicrochipNumber("9851410001234567");
++
++			petValidator.validate(pet, errors);
++
++			assertOnlyMicrochipNumberError("microchipNumber.invalid");
++		}
++
++		@Test
++		void tenCharacterNonIsoNumberIsRejected() {
++			pet.setMicrochipNumber("0A0139F53B");
++
++			petValidator.validate(pet, errors);
++
++			assertOnlyMicrochipNumberError("microchipNumber.invalid");
++		}
++
++		@Test
++		void dashedNumberIsRejected() {
++			pet.setMicrochipNumber("985-141-000-123-456");
++
++			petValidator.validate(pet, errors);
++
++			assertOnlyMicrochipNumberError("microchipNumber.invalid");
++		}
++
++		@Test
++		void numberOfAnotherPetIsRejectedForNewPet() {
++			given(pets.existsByMicrochipNumber("985141000123456")).willReturn(true);
++			pet.setMicrochipNumber("985141000123456");
++
++			petValidator.validate(pet, errors);
++
++			assertOnlyMicrochipNumberError("duplicate");
++		}
++
++		@Test
++		void numberOfAnotherPetIsRejectedForExistingPet() {
++			given(pets.existsByMicrochipNumberAndIdNot("985141000123456", 7)).willReturn(true);
++			pet.setId(7);
++			pet.setMicrochipNumber("985141000123456");
++
++			petValidator.validate(pet, errors);
++
++			assertOnlyMicrochipNumberError("duplicate");
++			verify(pets, never()).existsByMicrochipNumber("985141000123456");
++		}
++
++		@Test
++		void ownNumberIsAcceptedForExistingPet() {
++			given(pets.existsByMicrochipNumberAndIdNot("985141000123456", 7)).willReturn(false);
++			pet.setId(7);
++			pet.setMicrochipNumber("985 141 000 123 456");
++
++			petValidator.validate(pet, errors);
++
++			assertFalse(errors.hasErrors());
++			verify(pets).existsByMicrochipNumberAndIdNot("985141000123456", 7);
++			verify(pets, never()).existsByMicrochipNumber("985141000123456");
++		}
++
++		@Test
++		void malformedNumberNeverReachesRepositoryAndGetsOneError() {
++			pet.setMicrochipNumber("985141000123456-");
++
++			petValidator.validate(pet, errors);
++
++			assertOnlyMicrochipNumberError("microchipNumber.invalid");
++			verifyNoInteractions(pets);
++		}
++
++		@Test
++		void rejectDuplicateMicrochipNumberPutsOneDuplicateErrorOnMicrochipNumber() {
++			petValidator.rejectDuplicateMicrochipNumber(errors);
++
++			assertOnlyMicrochipNumberError("duplicate");
++			assertThat(errors.getFieldError("microchipNumber").getArguments()).isNullOrEmpty();
++		}
++
++	}
++
+ }
+diff --git a/src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java b/src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java
+index 96f90df..951280b 100644
+--- a/src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java
++++ b/src/test/java/org/springframework/samples/petclinic/service/ClinicServiceTests.java
+@@ -17,6 +17,7 @@
+ package org.springframework.samples.petclinic.service;
+ 
+ import static org.assertj.core.api.Assertions.assertThat;
++import static org.assertj.core.api.Assertions.assertThatThrownBy;
+ import static org.junit.jupiter.api.Assertions.assertThrows;
+ 
+ import org.springframework.dao.DataIntegrityViolationException;
+@@ -34,6 +35,7 @@ import org.springframework.data.domain.Pageable;
+ import org.springframework.samples.petclinic.owner.Owner;
+ import org.springframework.samples.petclinic.owner.OwnerRepository;
+ import org.springframework.samples.petclinic.owner.Pet;
++import org.springframework.samples.petclinic.owner.PetRepository;
+ import org.springframework.samples.petclinic.owner.PetType;
+ import org.springframework.samples.petclinic.owner.PetTypeRepository;
+ import org.springframework.samples.petclinic.owner.Visit;
+@@ -84,6 +86,9 @@ class ClinicServiceTests {
+ 	@Autowired
+ 	protected VetRepository vets;
+ 
++	@Autowired
++	protected PetRepository pets;
++
+ 	private final Pageable pageable = Pageable.unpaged();
+ 
+ 	@Test
+@@ -312,4 +317,88 @@ class ClinicServiceTests {
+ 		assertThat(owner2.getPet("samepetname")).isNotNull();
+ 	}
+ 
++	@Test
++	@Transactional
++	void shouldFindMicrochipNumberOfAnotherPetButNotOfThePetItself() {
++		Collection<PetType> types = this.types.findPetTypes();
++		Owner owner1 = this.owners.findById(1).orElseThrow();
++
++		Pet chipped = new Pet();
++		chipped.setName("Chipped");
++		chipped.setType(EntityUtils.getById(types, PetType.class, 1));
++		chipped.setBirthDate(LocalDate.now());
++		chipped.setMicrochipNumber("985141000123456");
++		owner1.addPet(chipped);
++		this.owners.saveAndFlush(owner1);
++
++		Integer chippedId = this.owners.findById(1).orElseThrow().getPet("Chipped").getId();
++		Integer otherPetId = this.owners.findById(2).orElseThrow().getPets().get(0).getId();
++		assertThat(chippedId).isNotNull();
++		assertThat(otherPetId).isNotEqualTo(chippedId);
++
++		assertThat(this.pets.existsByMicrochipNumber("985141000123456")).isTrue();
++		assertThat(this.pets.existsByMicrochipNumberAndIdNot("985141000123456", otherPetId)).isTrue();
++		assertThat(this.pets.existsByMicrochipNumberAndIdNot("985141000123456", chippedId)).isFalse();
++		assertThat(this.pets.existsByMicrochipNumber("985141000654321")).isFalse();
++	}
++
++	@Test
++	@Transactional
++	void shouldSaveTwoPetsWithoutMicrochipNumber() {
++		Collection<PetType> types = this.types.findPetTypes();
++		PetType catType = EntityUtils.getById(types, PetType.class, 1);
++
++		Owner owner1 = this.owners.findById(1).orElseThrow();
++		Pet first = new Pet();
++		first.setName("NoChipOne");
++		first.setType(catType);
++		first.setBirthDate(LocalDate.now());
++		owner1.addPet(first);
++		this.owners.saveAndFlush(owner1);
++
++		Owner owner2 = this.owners.findById(2).orElseThrow();
++		Pet second = new Pet();
++		second.setName("NoChipTwo");
++		second.setType(catType);
++		second.setBirthDate(LocalDate.now());
++		owner2.addPet(second);
++		this.owners.saveAndFlush(owner2);
++
++		Pet savedFirst = this.owners.findById(1).orElseThrow().getPet("NoChipOne");
++		Pet savedSecond = this.owners.findById(2).orElseThrow().getPet("NoChipTwo");
++		assertThat(savedFirst.getId()).isNotNull();
++		assertThat(savedFirst.getMicrochipNumber()).isNull();
++		assertThat(savedSecond.getId()).isNotNull();
++		assertThat(savedSecond.getMicrochipNumber()).isNull();
++	}
++
++	@Test
++	@Transactional
++	void shouldFailToInsertDuplicateMicrochipNumberForDifferentOwners() {
++		Collection<PetType> types = this.types.findPetTypes();
++		PetType catType = EntityUtils.getById(types, PetType.class, 1);
++
++		Owner owner1 = this.owners.findById(1).orElseThrow();
++		Pet pet1 = new Pet();
++		pet1.setName("ChipOne");
++		pet1.setType(catType);
++		pet1.setBirthDate(LocalDate.now());
++		pet1.setMicrochipNumber("985141000123456");
++		owner1.addPet(pet1);
++		this.owners.saveAndFlush(owner1);
++
++		Owner owner2 = this.owners.findById(2).orElseThrow();
++		Pet pet2 = new Pet();
++		pet2.setName("ChipTwo");
++		pet2.setType(catType);
++		pet2.setBirthDate(LocalDate.now());
++		pet2.setMicrochipNumber("985141000123456");
++		owner2.addPet(pet2);
++
++		// Saved through the repository, so PetValidator does not run: only the database
++		// constraint can reject it.
++		assertThatThrownBy(() -> this.owners.saveAndFlush(owner2)).isInstanceOf(DataIntegrityViolationException.class)
++			.satisfies(ex -> assertThat(ex.getMessage()).containsIgnoringCase("unique_pet_microchip_number"));
++	}
++
+ }
+diff --git a/src/test/resources/pc-301-release-1/mysql/data.sql b/src/test/resources/pc-301-release-1/mysql/data.sql
+new file mode 100644
+index 0000000..9d84eb8
+--- /dev/null
++++ b/src/test/resources/pc-301-release-1/mysql/data.sql
+@@ -0,0 +1,53 @@
++INSERT IGNORE INTO vets VALUES (1, 'James', 'Carter');
++INSERT IGNORE INTO vets VALUES (2, 'Helen', 'Leary');
++INSERT IGNORE INTO vets VALUES (3, 'Linda', 'Douglas');
++INSERT IGNORE INTO vets VALUES (4, 'Rafael', 'Ortega');
++INSERT IGNORE INTO vets VALUES (5, 'Henry', 'Stevens');
++INSERT IGNORE INTO vets VALUES (6, 'Sharon', 'Jenkins');
++
++INSERT IGNORE INTO specialties VALUES (1, 'radiology');
++INSERT IGNORE INTO specialties VALUES (2, 'surgery');
++INSERT IGNORE INTO specialties VALUES (3, 'dentistry');
++
++INSERT IGNORE INTO vet_specialties VALUES (2, 1);
++INSERT IGNORE INTO vet_specialties VALUES (3, 2);
++INSERT IGNORE INTO vet_specialties VALUES (3, 3);
++INSERT IGNORE INTO vet_specialties VALUES (4, 2);
++INSERT IGNORE INTO vet_specialties VALUES (5, 1);
++
++INSERT IGNORE INTO types VALUES (1, 'cat');
++INSERT IGNORE INTO types VALUES (2, 'dog');
++INSERT IGNORE INTO types VALUES (3, 'lizard');
++INSERT IGNORE INTO types VALUES (4, 'snake');
++INSERT IGNORE INTO types VALUES (5, 'bird');
++INSERT IGNORE INTO types VALUES (6, 'hamster');
++
++INSERT IGNORE INTO owners VALUES (1, 'George', 'Franklin', '110 W. Liberty St.', 'Madison', '6085551023');
++INSERT IGNORE INTO owners VALUES (2, 'Betty', 'Davis', '638 Cardinal Ave.', 'Sun Prairie', '6085551749');
++INSERT IGNORE INTO owners VALUES (3, 'Eduardo', 'Rodriquez', '2693 Commerce St.', 'McFarland', '6085558763');
++INSERT IGNORE INTO owners VALUES (4, 'Harold', 'Davis', '563 Friendly St.', 'Windsor', '6085553198');
++INSERT IGNORE INTO owners VALUES (5, 'Peter', 'McTavish', '2387 S. Fair Way', 'Madison', '6085552765');
++INSERT IGNORE INTO owners VALUES (6, 'Jean', 'Coleman', '105 N. Lake St.', 'Monona', '6085552654');
++INSERT IGNORE INTO owners VALUES (7, 'Jeff', 'Black', '1450 Oak Blvd.', 'Monona', '6085555387');
++INSERT IGNORE INTO owners VALUES (8, 'Maria', 'Escobito', '345 Maple St.', 'Madison', '6085557683');
++INSERT IGNORE INTO owners VALUES (9, 'David', 'Schroeder', '2749 Blackhawk Trail', 'Madison', '6085559435');
++INSERT IGNORE INTO owners VALUES (10, 'Carlos', 'Estaban', '2335 Independence La.', 'Waunakee', '6085555487');
++
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (1, 'Leo', '2000-09-07', 1, 1);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (2, 'Basil', '2002-08-06', 6, 2);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (3, 'Rosy', '2001-04-17', 2, 3);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (4, 'Jewel', '2000-03-07', 2, 3);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (5, 'Iggy', '2000-11-30', 3, 4);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (6, 'George', '2000-01-20', 4, 5);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (7, 'Samantha', '1995-09-04', 1, 6);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (8, 'Max', '1995-09-04', 1, 6);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (9, 'Lucky', '1999-08-06', 5, 7);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (10, 'Mulligan', '1997-02-24', 2, 8);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (11, 'Freddy', '2000-03-09', 5, 9);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (12, 'Lucky', '2000-06-24', 2, 10);
++INSERT IGNORE INTO pets (id, name, birth_date, type_id, owner_id) VALUES (13, 'Sly', '2002-06-08', 1, 10);
++
++INSERT IGNORE INTO visits VALUES (1, 7, '2010-03-04', 'rabies shot');
++INSERT IGNORE INTO visits VALUES (2, 8, '2011-03-04', 'rabies shot');
++INSERT IGNORE INTO visits VALUES (3, 8, '2009-06-04', 'neutered');
++INSERT IGNORE INTO visits VALUES (4, 7, '2008-09-04', 'spayed');
+diff --git a/src/test/resources/pc-301-release-1/mysql/schema.sql b/src/test/resources/pc-301-release-1/mysql/schema.sql
+new file mode 100644
+index 0000000..ed53056
+--- /dev/null
++++ b/src/test/resources/pc-301-release-1/mysql/schema.sql
+@@ -0,0 +1,56 @@
++CREATE TABLE IF NOT EXISTS vets (
++  id INT(4) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
++  first_name VARCHAR(30),
++  last_name VARCHAR(30),
++  INDEX(last_name)
++) engine=InnoDB;
++
++CREATE TABLE IF NOT EXISTS specialties (
++  id INT(4) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
++  name VARCHAR(80),
++  INDEX(name)
++) engine=InnoDB;
++
++CREATE TABLE IF NOT EXISTS vet_specialties (
++  vet_id INT(4) UNSIGNED NOT NULL,
++  specialty_id INT(4) UNSIGNED NOT NULL,
++  FOREIGN KEY (vet_id) REFERENCES vets(id),
++  FOREIGN KEY (specialty_id) REFERENCES specialties(id),
++  UNIQUE (vet_id,specialty_id)
++) engine=InnoDB;
++
++CREATE TABLE IF NOT EXISTS types (
++  id INT(4) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
++  name VARCHAR(80),
++  INDEX(name)
++) engine=InnoDB;
++
++CREATE TABLE IF NOT EXISTS owners (
++  id INT(4) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
++  first_name VARCHAR(30),
++  last_name VARCHAR(30),
++  address VARCHAR(255),
++  city VARCHAR(80),
++  telephone VARCHAR(20),
++  INDEX(last_name)
++) engine=InnoDB;
++
++CREATE TABLE IF NOT EXISTS pets (
++  id INT(4) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
++  name VARCHAR(30),
++  birth_date DATE,
++  type_id INT(4) UNSIGNED NOT NULL,
++  owner_id INT(4) UNSIGNED,
++  INDEX(name),
++  FOREIGN KEY (owner_id) REFERENCES owners(id),
++  FOREIGN KEY (type_id) REFERENCES types(id),
++  UNIQUE (owner_id, name)
++) engine=InnoDB;
++
++CREATE TABLE IF NOT EXISTS visits (
++  id INT(4) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
++  pet_id INT(4) UNSIGNED,
++  visit_date DATE,
++  description VARCHAR(255),
++  FOREIGN KEY (pet_id) REFERENCES pets(id)
++) engine=InnoDB;
+diff --git a/src/test/resources/pc-301-release-1/postgres/data.sql b/src/test/resources/pc-301-release-1/postgres/data.sql
+new file mode 100644
+index 0000000..d37cf7c
+--- /dev/null
++++ b/src/test/resources/pc-301-release-1/postgres/data.sql
+@@ -0,0 +1,53 @@
++INSERT INTO vets (first_name, last_name) SELECT 'James', 'Carter' WHERE NOT EXISTS (SELECT * FROM vets WHERE id=1);
++INSERT INTO vets (first_name, last_name) SELECT 'Helen', 'Leary' WHERE NOT EXISTS (SELECT * FROM vets WHERE id=2);
++INSERT INTO vets (first_name, last_name) SELECT 'Linda', 'Douglas' WHERE NOT EXISTS (SELECT * FROM vets WHERE id=3);
++INSERT INTO vets (first_name, last_name) SELECT 'Rafael', 'Ortega' WHERE NOT EXISTS (SELECT * FROM vets WHERE id=4);
++INSERT INTO vets (first_name, last_name) SELECT 'Henry', 'Stevens' WHERE NOT EXISTS (SELECT * FROM vets WHERE id=5);
++INSERT INTO vets (first_name, last_name) SELECT 'Sharon', 'Jenkins' WHERE NOT EXISTS (SELECT * FROM vets WHERE id=6);
++
++INSERT INTO specialties (name) SELECT 'radiology' WHERE NOT EXISTS (SELECT * FROM specialties WHERE name='radiology');
++INSERT INTO specialties (name) SELECT 'surgery' WHERE NOT EXISTS (SELECT * FROM specialties WHERE name='surgery');
++INSERT INTO specialties (name) SELECT 'dentistry' WHERE NOT EXISTS (SELECT * FROM specialties WHERE name='dentistry');
++
++INSERT INTO vet_specialties VALUES (2, 1) ON CONFLICT (vet_id, specialty_id) DO NOTHING;
++INSERT INTO vet_specialties VALUES (3, 2) ON CONFLICT (vet_id, specialty_id) DO NOTHING;
++INSERT INTO vet_specialties VALUES (3, 3) ON CONFLICT (vet_id, specialty_id) DO NOTHING;
++INSERT INTO vet_specialties VALUES (4, 2) ON CONFLICT (vet_id, specialty_id) DO NOTHING;
++INSERT INTO vet_specialties VALUES (5, 1) ON CONFLICT (vet_id, specialty_id) DO NOTHING;
++
++INSERT INTO types (name) SELECT 'cat' WHERE NOT EXISTS (SELECT * FROM types WHERE name='cat');
++INSERT INTO types (name) SELECT 'dog' WHERE NOT EXISTS (SELECT * FROM types WHERE name='dog');
++INSERT INTO types (name) SELECT 'lizard' WHERE NOT EXISTS (SELECT * FROM types WHERE name='lizard');
++INSERT INTO types (name) SELECT 'snake' WHERE NOT EXISTS (SELECT * FROM types WHERE name='snake');
++INSERT INTO types (name) SELECT 'bird' WHERE NOT EXISTS (SELECT * FROM types WHERE name='bird');
++INSERT INTO types (name) SELECT 'hamster' WHERE NOT EXISTS (SELECT * FROM types WHERE name='hamster');
++
++INSERT INTO owners (first_name, last_name, address, city, telephone) SELECT 'George', 'Franklin', '110 W. Liberty St.', 'Madison', '6085551023' WHERE NOT EXISTS (SELECT * FROM owners WHERE id=1);
++INSERT INTO owners (first_name, last_name, address, city, telephone) SELECT 'Betty', 'Davis', '638 Cardinal Ave.', 'Sun Prairie', '6085551749' WHERE NOT EXISTS (SELECT * FROM owners WHERE id=2);
++INSERT INTO owners (first_name, last_name, address, city, telephone) SELECT 'Eduardo', 'Rodriquez', '2693 Commerce St.', 'McFarland', '6085558763' WHERE NOT EXISTS (SELECT * FROM owners WHERE id=3);
++INSERT INTO owners (first_name, last_name, address, city, telephone) SELECT 'Harold', 'Davis', '563 Friendly St.', 'Windsor', '6085553198' WHERE NOT EXISTS (SELECT * FROM owners WHERE id=4);
++INSERT INTO owners (first_name, last_name, address, city, telephone) SELECT 'Peter', 'McTavish', '2387 S. Fair Way', 'Madison', '6085552765' WHERE NOT EXISTS (SELECT * FROM owners WHERE id=5);
++INSERT INTO owners (first_name, last_name, address, city, telephone) SELECT 'Jean', 'Coleman', '105 N. Lake St.', 'Monona', '6085552654' WHERE NOT EXISTS (SELECT * FROM owners WHERE id=6);
++INSERT INTO owners (first_name, last_name, address, city, telephone) SELECT 'Jeff', 'Black', '1450 Oak Blvd.', 'Monona', '6085555387' WHERE NOT EXISTS (SELECT * FROM owners WHERE id=7);
++INSERT INTO owners (first_name, last_name, address, city, telephone) SELECT 'Maria', 'Escobito', '345 Maple St.', 'Madison', '6085557683' WHERE NOT EXISTS (SELECT * FROM owners WHERE id=8);
++INSERT INTO owners (first_name, last_name, address, city, telephone) SELECT 'David', 'Schroeder', '2749 Blackhawk Trail', 'Madison', '6085559435' WHERE NOT EXISTS (SELECT * FROM owners WHERE id=9);
++INSERT INTO owners (first_name, last_name, address, city, telephone) SELECT 'Carlos', 'Estaban', '2335 Independence La.', 'Waunakee', '6085555487' WHERE NOT EXISTS (SELECT * FROM owners WHERE id=10);
++
++INSERT INTO pets (name, birth_date, type_id, owner_id) SELECT 'Leo', '2000-09-07', 1, 1 WHERE NOT EXISTS (SELECT * FROM pets WHERE id=1);
++INSERT INTO pets (name, birth_date, type_id, owner_id) SELECT 'Basil', '2002-08-06', 6, 2 WHERE NOT EXISTS (SELECT * FROM pets WHERE id=2);
++INSERT INTO pets (name, birth_date, type_id, owner_id) SELECT 'Rosy', '2001-04-17', 2, 3 WHERE NOT EXISTS (SELECT * FROM pets WHERE id=3);
++INSERT INTO pets (name, birth_date, type_id, owner_id) SELECT 'Jewel', '2000-03-07', 2, 3 WHERE NOT EXISTS (SELECT * FROM pets WHERE id=4);
++INSERT INTO pets (name, birth_date, type_id, owner_id) SELECT 'Iggy', '2000-11-30', 3, 4 WHERE NOT EXISTS (SELECT * FROM pets WHERE id=5);
++INSERT INTO pets (name, birth_date, type_id, owner_id) SELECT 'George', '2000-01-20', 4, 5 WHERE NOT EXISTS (SELECT * FROM pets WHERE id=6);
++INSERT INTO pets (name, birth_date, type_id, owner_id) SELECT 'Samantha', '1995-09-04', 1, 6 WHERE NOT EXISTS (SELECT * FROM pets WHERE id=7);
++INSERT INTO pets (name, birth_date, type_id, owner_id) SELECT 'Max', '1995-09-04', 1, 6 WHERE NOT EXISTS (SELECT * FROM pets WHERE id=8);
++INSERT INTO pets (name, birth_date, type_id, owner_id) SELECT 'Lucky', '1999-08-06', 5, 7 WHERE NOT EXISTS (SELECT * FROM pets WHERE id=9);
++INSERT INTO pets (name, birth_date, type_id, owner_id) SELECT 'Mulligan', '1997-02-24', 2, 8 WHERE NOT EXISTS (SELECT * FROM pets WHERE id=10);
++INSERT INTO pets (name, birth_date, type_id, owner_id) SELECT 'Freddy', '2000-03-09', 5, 9 WHERE NOT EXISTS (SELECT * FROM pets WHERE id=11);
++INSERT INTO pets (name, birth_date, type_id, owner_id) SELECT 'Lucky', '2000-06-24', 2, 10 WHERE NOT EXISTS (SELECT * FROM pets WHERE id=12);
++INSERT INTO pets (name, birth_date, type_id, owner_id) SELECT 'Sly', '2002-06-08', 1, 10 WHERE NOT EXISTS (SELECT * FROM pets WHERE id=13);
++
++INSERT INTO visits (pet_id, visit_date, description) SELECT 7, '2010-03-04', 'rabies shot' WHERE NOT EXISTS (SELECT * FROM visits WHERE id=1);
++INSERT INTO visits (pet_id, visit_date, description) SELECT 8, '2011-03-04', 'rabies shot' WHERE NOT EXISTS (SELECT * FROM visits WHERE id=2);
++INSERT INTO visits (pet_id, visit_date, description) SELECT 8, '2009-06-04', 'neutered' WHERE NOT EXISTS (SELECT * FROM visits WHERE id=3);
++INSERT INTO visits (pet_id, visit_date, description) SELECT 7, '2008-09-04', 'spayed' WHERE NOT EXISTS (SELECT * FROM visits WHERE id=4);
+diff --git a/src/test/resources/pc-301-release-1/postgres/schema.sql b/src/test/resources/pc-301-release-1/postgres/schema.sql
+new file mode 100644
+index 0000000..05b450d
+--- /dev/null
++++ b/src/test/resources/pc-301-release-1/postgres/schema.sql
+@@ -0,0 +1,53 @@
++CREATE TABLE IF NOT EXISTS vets (
++  id         INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
++  first_name TEXT,
++  last_name  TEXT
++);
++CREATE INDEX IF NOT EXISTS idx_vets_last_name ON vets (last_name);
++
++CREATE TABLE IF NOT EXISTS specialties (
++  id   INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
++  name TEXT
++);
++CREATE INDEX IF NOT EXISTS idx_specialties_name ON specialties (name);
++
++CREATE TABLE IF NOT EXISTS vet_specialties (
++  vet_id       INT NOT NULL REFERENCES vets (id),
++  specialty_id INT NOT NULL REFERENCES specialties (id),
++  UNIQUE (vet_id, specialty_id)
++);
++
++CREATE TABLE IF NOT EXISTS types (
++  id   INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
++  name TEXT
++);
++CREATE INDEX IF NOT EXISTS idx_types_name ON types (name);
++
++CREATE TABLE IF NOT EXISTS owners (
++  id         INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
++  first_name TEXT,
++  last_name  TEXT,
++  address    TEXT,
++  city       TEXT,
++  telephone  TEXT
++);
++CREATE INDEX IF NOT EXISTS idx_owners_last_name ON owners (last_name);
++
++CREATE TABLE IF NOT EXISTS pets (
++  id         INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
++  name       TEXT,
++  birth_date DATE,
++  type_id    INT NOT NULL REFERENCES types (id),
++  owner_id   INT REFERENCES owners (id)
++);
++CREATE INDEX IF NOT EXISTS idx_pets_name ON pets (name);
++CREATE INDEX IF NOT EXISTS idx_pets_owner_id ON pets (owner_id);
++CREATE UNIQUE INDEX IF NOT EXISTS unique_owner_pet_name ON pets (owner_id, LOWER(name));
++
++CREATE TABLE IF NOT EXISTS visits (
++  id          INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
++  pet_id      INT REFERENCES pets (id),
++  visit_date  DATE,
++  description TEXT
++);
++CREATE INDEX IF NOT EXISTS idx_visits_pet_id ON visits (pet_id);

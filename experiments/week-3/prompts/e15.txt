@@ -1,0 +1,5 @@
+Review the OpenSpec change pc-301 before anyone writes code for it. It was written for this ticket:
+
+PC-301: Record a pet's microchip number. Reception wants to record each pet's microchip number when they add or edit a pet, so we can identify a pet when it is scanned. The same chip shouldn't end up on two pets.
+
+The change is in openspec/changes/pc-301/, with the decisions log from refining the ticket. Put your whole review in your final reply.

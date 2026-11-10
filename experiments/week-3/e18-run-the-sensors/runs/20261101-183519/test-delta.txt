@@ -1,0 +1,5 @@
+src/test/java/org/springframework/samples/petclinic/MySqlMicrochipNumberMigrationTests.java:33: skip added: @Testcontainers(disabledWithoutDocker = true)
+src/test/java/org/springframework/samples/petclinic/PetClinicConcurrencyTests.java:172: broad catch added: catch (Exception e) {
+src/test/java/org/springframework/samples/petclinic/PostgresMicrochipNumberMigrationTests.java:51: skip added: assumeTrue(DockerClientFactory.instance().isDockerAvailable(), "Docker not available");
+src/test/java/org/springframework/samples/petclinic/owner/PetControllerCharacterizationTests.java:79: protected check: modified, 3 lines added, 0 removed
+summary: tests in changed files 82 -> 127; assertion lines added 138, removed 0, moved 0; findings 4
