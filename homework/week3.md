@@ -71,7 +71,7 @@ Watch for the decision your criteria never made. An empty list of open questions
 Save the results in `notes/sensors.md`, so a reviewer can read them.
 
 - Your Week 2 sensor and the full test suite.
-- Mutation testing on the classes your change touched. Tollgate's build has no mutation testing, so add PIT on your branch. Class used PIT 1.30.1 with `pitest-junit5-plugin` 1.2.3. Limit it to those classes: Tollgate's tests start an embedded PostgreSQL, so a wider run may be slow. Stop after 15 minutes, and record what ran.
+- Mutation testing on the classes your change touched. Tollgate's build has no mutation testing, so add PIT on your branch. Class used PIT 1.30.1 with `pitest-junit5-plugin` 1.2.3. Limit it to those classes: Tollgate's tests start an embedded PostgreSQL, so a wider run may be slow. Exclude the integration tests with `excludedTestClasses` set to `*IT`: the build never runs them, PIT does, and one of them fails, which stops PIT before it mutates anything. Stop after 15 minutes, and record what ran.
 
 Not run is not passed. Write down anything that didn't run, and why.
 
@@ -80,12 +80,16 @@ Not run is not passed. Write down anything that didn't run, and why.
 1. **Self-review.** Ask your coding agent to review its own change, in the session that wrote it if you still have it. Save the reply.
 2. **Independent review.** A new session, with `review-code`. Give it the diff (`git diff main...cr-188`), your criteria, your baseline and `notes/sensors.md`. **Withhold** the self-review, your agent's summary, and anything that says how confident anyone is.
 
+   `review-code` is written for an OpenSpec change. Tell it that your criteria file takes the place of `openspec/changes/<change>/`, and that each acceptance criterion is a scenario.
+
    It gives a verdict on every criterion before any overall view: MET, PARTLY, UNTESTED or NOT MET. A test counts only if it can fail.
 3. **Compare.** In your findings file, mark what both reviews found and what only one found. Check any finding only one made. Was it right? Check one MET too: does the test it cites submit the input the criterion describes?
 
 ## 4. Triage (about 15 minutes)
 
 1. **Merge** the findings of all your reviews and sensors, with `triage-findings` or by hand. Drop nothing, and lower no disposition without a reason you write down.
+
+   `triage-findings` expects a `sources.md` that lists every finding to account for, and a policy script after it. Give it `notes/week3-findings.md` in its place. There is no script: you read the merged list yourself.
 2. **Challenge one finding through its falsification line.** It says what would prove the finding wrong. Go and look. Record what you found, even if the finding stands.
 3. **Count.** How many findings were raised? How many would reach a person, and why those?
 
